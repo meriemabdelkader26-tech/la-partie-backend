@@ -8,7 +8,7 @@ import django
 
 # Setup Django
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'brandfluence.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'influBridge.settings')
 django.setup()
 
 from django.contrib.auth import get_user_model
@@ -21,7 +21,7 @@ def check_admin_status():
     print("\n=== Admin Status Check ===\n")
     
     try:
-        admin = User.objects.get(email='admin@brandfluence.com')
+        admin = User.objects.get(email='admin@influBridge.com')
         
         print(f"Email: {admin.email}")
         print(f"Name: {admin.name}")
@@ -92,7 +92,7 @@ def check_admin_status():
             print(f"  - is_staff: {admin.is_staff} {'✅' if admin.is_staff else '❌'}")
         
     except User.DoesNotExist:
-        print("❌ Admin user (admin@brandfluence.com) not found!")
+        print("❌ Admin user (admin@influBridge.com) not found!")
         print("\nCreate a new superuser:")
         print("  python manage.py createsuperuser")
 

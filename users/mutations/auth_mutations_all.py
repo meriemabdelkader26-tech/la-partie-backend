@@ -7,6 +7,7 @@ import graphql_jwt
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 from django.contrib.auth import get_user_model, authenticate
+from django.conf import settings
 from ..user_node import UserNode
 from ..utils import (
     generate_password_reset_token,
@@ -54,7 +55,7 @@ class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
             raise GraphQLError('Your account is inactive. Please contact support.')
         
         # Check if email is verified
-        if not user.email_verified:
+        if getattr(settings, 'EMAIL_VERIFICATION_REQUIRED', False) and not user.email_verified:
             raise GraphQLError('Please verify your email address before logging in.')
         
         # Check if profile is completed

@@ -81,6 +81,6 @@ echo If all checks pass, you can deploy:
 echo    gcloud builds submit --config cloudbuild.yaml
 echo.
 echo After deployment, check logs:
-echo    gcloud run logs read brandfluence --region us-central1 --limit 100
+echo    gcloud run logs read influBridge --region us-central1 --limit 100
 echo.
 pause

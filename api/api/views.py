@@ -16,18 +16,18 @@ class HealthCheckView(APIView):
     def get(self, request):
         return Response({
             'status': 'healthy',
-            'service': 'Brandfluence Recommendation API',
+            'service': 'InfluBridge Recommendation API',
             'version': '1.0.0'
         })
 
-class BrandfluenceRecommender:
-    """Système de recommandation Brandfluence"""
+class InfluBridgeRecommender:
+    """Système de recommandation InfluBridge"""
     
     _instance = None
     
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(BrandfluenceRecommender, cls).__new__(cls)
+            cls._instance = super(InfluBridgeRecommender, cls).__new__(cls)
             cls._instance.initialized = False
         return cls._instance
     
@@ -197,7 +197,7 @@ class BrandfluenceRecommender:
         return str(num)
 
 
-recommender = BrandfluenceRecommender()
+recommender = InfluBridgeRecommender()
 
 class StatsView(APIView):
     """Statistiques du système"""

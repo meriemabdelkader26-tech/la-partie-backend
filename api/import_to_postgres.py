@@ -19,7 +19,7 @@ def get_postgres_connection():
     config = {
         'host': 'localhost',
         'port': '5432',
-        'database': 'brandfluence',
+        'database': 'influBridge',
         'user': 'postgres',  
         'password': '0000',  
         'schema': 'public'  
@@ -60,7 +60,7 @@ def test_connection(engine):
         logger.error(f" Erreur de connexion à PostgreSQL: {e}")
         logger.info("\n VÉRIFIEZ QUE:")
         logger.info("   1. PostgreSQL est installé et fonctionne")
-        logger.info("   2. La base 'brandfluence' existe")
+        logger.info("   2. La base 'influBridge' existe")
         logger.info("   3. Les identifiants sont corrects")
         return False
 

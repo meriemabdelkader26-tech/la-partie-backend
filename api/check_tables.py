@@ -2,7 +2,7 @@
 from sqlalchemy import create_engine
 import pandas as pd
 
-engine = create_engine('postgresql://postgres:0000@localhost:5432/brandfluence')
+engine = create_engine('postgresql://postgres:0000@localhost:5432/influBridge')
 
 
 query = """

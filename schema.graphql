@@ -925,6 +925,7 @@ type CreateCompanyProfile {
   success: Boolean
   message: String
   company: CompanyNode
+  user: UserNode
 }
 
 """Input type for Address"""
@@ -973,6 +974,7 @@ type CompleteCompanyProfile {
 """Complete influencer profile with all information"""
 type CompleteInfluencerProfile {
   influencer: InfluencerNode
+  user: UserNode
   success: Boolean
   message: String
 }

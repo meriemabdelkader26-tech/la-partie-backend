@@ -28,7 +28,7 @@ class CosineSimilarityRecommender:
 
 
 class RecommandationSystem:
-    """Système final de recommandation pour Brandfluence"""
+    """Système final de recommandation pour InfluBridge"""
     
     def __init__(self, data_path: str = 'data/influenceurs_recommendation_ready.csv'):
         print(" Initialisation du système de recommandation...")
@@ -403,7 +403,7 @@ def interactive_mode(system):
 
 if __name__ == "__main__":
     print("="*60)
-    print(" SYSTÈME DE RECOMMANDATION BRANDFLUENCE")
+    print(" SYSTÈME DE RECOMMANDATION INFLUBRIDGE")
     print("="*60)
     
     

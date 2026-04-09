@@ -382,7 +382,7 @@ def visualize_comparison(results, df, models):
     
     diversity_scores = [results[m]['avg_diversity'] for m in model_names]
     
-    axes[0, 1].bar(model_names, diversity_scores, color='lightgreen')
+    axes[0, 1].bar(model_names, diversity_scores, color='pink')
     axes[0, 1].set_title('Diversité Moyenne des Recommandations')
     axes[0, 1].set_ylabel('Score de Diversité')
     axes[0, 1].tick_params(axis='x', rotation=45)

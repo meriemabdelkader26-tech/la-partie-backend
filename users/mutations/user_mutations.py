@@ -1,4 +1,9 @@
 import graphene
+from .chatbot_mutations import AskChatbot
+from .subscription_mutations import (
+    CreateBillingPortalSession,
+    CreatePlatformSubscriptionCheckoutSession,
+)
 from .user_mutations_all import (
     RegisterUser,
     VerifyEmailWithToken,
@@ -28,3 +33,6 @@ class UserMutations(graphene.ObjectType):
     ban_user = BanUser.Field()
     unban_user = UnbanUser.Field()
     delete_user = DeleteUser.Field()
+    ask_chatbot = AskChatbot.Field()
+    create_platform_subscription_checkout_session = CreatePlatformSubscriptionCheckoutSession.Field()
+    create_billing_portal_session = CreateBillingPortalSession.Field()

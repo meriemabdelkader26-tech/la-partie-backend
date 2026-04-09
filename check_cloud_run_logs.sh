@@ -9,7 +9,7 @@ echo ""
 echo "Looking for data file initialization logs..."
 echo ""
 
-gcloud run logs read brandfluence \
+gcloud run logs read influBridge \
   --region us-central1 \
   --limit 200 \
   --format "value(textPayload)" 2>/dev/null | \
@@ -23,7 +23,7 @@ echo "=========================================="
 echo ""
 
 # Check for data loading errors
-gcloud run logs read brandfluence \
+gcloud run logs read influBridge \
   --region us-central1 \
   --limit 100 \
   --format "value(textPayload)" 2>/dev/null | \
@@ -34,12 +34,12 @@ echo ""
 echo "=========================================="
 echo "Full recent logs:"
 echo "=========================================="
-gcloud run logs read brandfluence \
+gcloud run logs read influBridge \
   --region us-central1 \
   --limit 30
 
 echo ""
 echo "=========================================="
 echo "To see live logs:"
-echo "  gcloud run logs tail brandfluence --region us-central1"
+echo "  gcloud run logs tail influBridge --region us-central1"
 echo "=========================================="

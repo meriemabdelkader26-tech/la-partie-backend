@@ -12,7 +12,7 @@ plt.style.use('seaborn-v0_8')
 sns.set_palette("husl")
 
 # Connexion à PostgreSQL
-engine = create_engine('postgresql://postgres:0000@localhost:5432/brandfluence')
+engine = create_engine('postgresql://postgres:0000@localhost:5432/influBridge')
 
 def load_data():
     """Charge les données depuis PostgreSQL"""
@@ -117,7 +117,7 @@ def visualize_distributions(df):
     axes[0, 0].set_xscale('log')
     
     # Engagement rate
-    axes[0, 1].hist(df['engagement_rate'], bins=30, edgecolor='black', alpha=0.7, color='green')
+    axes[0, 1].hist(df['engagement_rate'], bins=30, edgecolor='black', alpha=0.7, color='pink')
     axes[0, 1].set_title('Distribution du Taux d\'Engagement')
     axes[0, 1].set_xlabel('Engagement Rate (%)')
     axes[0, 1].set_ylabel('Fréquence')

@@ -53,7 +53,7 @@ echo Run this command to deploy:
 echo    gcloud builds submit --config cloudbuild.yaml
 echo.
 echo Or if using docker directly:
-echo    gcloud run deploy brandfluence --source . --region us-central1
+echo    gcloud run deploy influBridge --source . --region us-central1
 echo.
 echo ============================================================
 echo IMPORTANT: After deployment, check the build logs!

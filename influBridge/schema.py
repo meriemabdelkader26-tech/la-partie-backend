@@ -6,8 +6,15 @@ from offer import schema as offer_schema
 
 # IMPORT CORRIGÉ
 from offer.mutations.offer_application_mutations import (
+    AddPaymentMethod,
     CreateOfferApplication,
+    CreatePayoutRequest,
+    DeclineOfferOpportunity,
     UpdateOfferApplicationStatus,
+    MarkApplicationPaymentEscrow,
+    CreateApplicationCheckoutSession,
+    ReleaseApplicationPayment,
+    RefundApplicationPayment,
 )
 
 class Query(
@@ -26,7 +33,14 @@ class Mutation(
     graphene.ObjectType
 ):
     create_offer_application = CreateOfferApplication.Field()
+    add_payment_method = AddPaymentMethod.Field()
+    create_payout_request = CreatePayoutRequest.Field()
+    decline_offer_opportunity = DeclineOfferOpportunity.Field()
     update_offer_application_status = UpdateOfferApplicationStatus.Field()
+    mark_application_payment_escrow = MarkApplicationPaymentEscrow.Field()
+    create_application_checkout_session = CreateApplicationCheckoutSession.Field()
+    release_application_payment = ReleaseApplicationPayment.Field()
+    refund_application_payment = RefundApplicationPayment.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

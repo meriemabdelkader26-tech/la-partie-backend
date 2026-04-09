@@ -25,16 +25,16 @@ The REST API endpoints (like `/api/recommend/`) were returning 500 errors on Goo
 - Added `/app/data/` and `/app/api/data/` paths for Docker
 - Detailed logging of which paths are checked and found
 
-### 3. Logging Configuration (`brandfluence/settings.py`)
+### 3. Logging Configuration (`influBridge/settings.py`)
 
 - Added Django logging configuration
 - Logs go to console (stdout) for Cloud Run
 - API module logs at DEBUG level
 - Root logger at INFO level
 
-### 4. ALLOWED_HOSTS Update (`brandfluence/settings.py`)
+### 4. ALLOWED_HOSTS Update (`influBridge/settings.py`)
 
-- Added `brandfluence-251801873872.us-central1.run.app`
+- Added `influBridge-251801873872.us-central1.run.app`
 - Added wildcard Cloud Run domains (`.run.app`, `.a.run.app`)
 
 ### 5. Dockerfile Verification (`Dockerfile`)
@@ -51,7 +51,7 @@ The REST API endpoints (like `/api/recommend/`) were returning 500 errors on Goo
 gcloud builds submit --config cloudbuild.yaml
 
 # OR if using direct deployment:
-gcloud run deploy brandfluence \\
+gcloud run deploy influBridge \\
   --source . \\
   --region us-central1 \\
   --platform managed \\
@@ -63,7 +63,7 @@ gcloud run deploy brandfluence \\
 After deployment, check the logs to see initialization details:
 
 ```bash
-gcloud run logs read brandfluence --region us-central1 --limit 100
+gcloud run logs read influBridge --region us-central1 --limit 100
 ```
 
 Look for these log lines:
@@ -77,13 +77,13 @@ Look for these log lines:
 
 ```bash
 # Test the recommend endpoint
-curl "https://brandfluence-251801873872.us-central1.run.app/api/recommend/?category=Fashion&country=USA&n=5"
+curl "https://influBridge-251801873872.us-central1.run.app/api/recommend/?category=Fashion&country=USA&n=5"
 
 # Test health check
-curl "https://brandfluence-251801873872.us-central1.run.app/api/health/"
+curl "https://influBridge-251801873872.us-central1.run.app/api/health/"
 
 # Test stats
-curl "https://brandfluence-251801873872.us-central1.run.app/api/stats/"
+curl "https://influBridge-251801873872.us-central1.run.app/api/stats/"
 ```
 
 ## If Issues Persist
@@ -95,10 +95,10 @@ curl "https://brandfluence-251801873872.us-central1.run.app/api/stats/"
 gcloud run services list --region us-central1
 
 # Check files in the running container
-gcloud run services describe brandfluence --region us-central1
+gcloud run services describe influBridge --region us-central1
 
 # View logs
-gcloud run logs read brandfluence --region us-central1 --limit 200 | grep -i "data\\|error\\|csv"
+gcloud run logs read influBridge --region us-central1 --limit 200 | grep -i "data\\|error\\|csv"
 ```
 
 ### Check 2: Environment Variables
@@ -106,10 +106,10 @@ gcloud run logs read brandfluence --region us-central1 --limit 200 | grep -i "da
 Make sure these are set in Cloud Run:
 
 ```bash
-gcloud run services update brandfluence \\
+gcloud run services update influBridge \\
   --region us-central1 \\
   --set-env-vars DEBUG=False \\
-  --set-env-vars ALLOWED_HOSTS=brandfluence-251801873872.us-central1.run.app
+  --set-env-vars ALLOWED_HOSTS=influBridge-251801873872.us-central1.run.app
 ```
 
 ### Check 3: Check Build Logs
@@ -159,7 +159,7 @@ git commit -m "Include data files for deployment"
 **Solution:** Check the actual error in logs:
 
 ```bash
-gcloud run logs read brandfluence --region us-central1 --limit 200 | grep -i error
+gcloud run logs read influBridge --region us-central1 --limit 200 | grep -i error
 ```
 
 ### Issue: CSV files present but not loading
@@ -192,14 +192,14 @@ Valid test URLs:
 
 ```
 # Fashion
-https://brandfluence-251801873872.us-central1.run.app/api/recommend/?category=Fashion&country=USA&n=10
+https://influBridge-251801873872.us-central1.run.app/api/recommend/?category=Fashion&country=USA&n=10
 
 # Technology
-https://brandfluence-251801873872.us-central1.run.app/api/recommend/?category=Technology&country=Canada&n=5
+https://influBridge-251801873872.us-central1.run.app/api/recommend/?category=Technology&country=Canada&n=5
 
 # Get all categories
-https://brandfluence-251801873872.us-central1.run.app/api/categories/
+https://influBridge-251801873872.us-central1.run.app/api/categories/
 
 # Get all countries
-https://brandfluence-251801873872.us-central1.run.app/api/countries/
+https://influBridge-251801873872.us-central1.run.app/api/countries/
 ```

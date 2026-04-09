@@ -9,7 +9,7 @@ import django
 
 # Setup Django
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'brandfluence.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'influBridge.settings')
 django.setup()
 
 from django.contrib.auth import get_user_model
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         print("\nUsage:")
         print("  python reset_admin_quick.py <email> <new_password>")
         print("\nExample:")
-        print("  python reset_admin_quick.py admin@brandfluence.com NewPassword123")
+        print("  python reset_admin_quick.py admin@influBridge.com NewPassword123")
     elif len(sys.argv) == 3:
         # Reset password
         email = sys.argv[1]

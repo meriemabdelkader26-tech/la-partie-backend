@@ -10,6 +10,7 @@ from users.models import User, UserRole
 from users.company_models import Company, Address
 from users.influencer_models import Image
 from users.types.company_node import CompanyNode, AddressNode
+from users.user_node import UserNode
 
 
 def is_company_role(user):
@@ -56,6 +57,7 @@ class CreateCompanyProfile(graphene.Mutation):
     success = graphene.Boolean()
     message = graphene.String()
     company = graphene.Field(CompanyNode)
+    user = graphene.Field(UserNode)
     
     @staticmethod
     @transaction.atomic
@@ -66,21 +68,24 @@ class CreateCompanyProfile(graphene.Mutation):
             return CreateCompanyProfile(
                 success=False,
                 message="Authentication required",
-                company=None
+                company=None,
+                user=None
             )
         
         if not is_company_role(user):
             return CreateCompanyProfile(
                 success=False,
                 message=f"User must have COMPANY role to create a company profile. Current role: {user.role}",
-                company=None
+                company=None,
+                user=None
             )
         
         if hasattr(user, 'company_profile'):
             return CreateCompanyProfile(
                 success=False,
                 message="Company profile already exists for this user",
-                company=None
+                company=None,
+                user=user
             )
         
         # Create address if provided
@@ -117,11 +122,16 @@ class CreateCompanyProfile(graphene.Mutation):
                     content_type=content_type,
                     object_id=company.id
                 )
+
+        # Mark profile as completed after first successful company profile creation
+        user.is_completed_profile = True
+        user.save(update_fields=['is_completed_profile'])
         
         return CreateCompanyProfile(
             success=True,
             message="Company profile created successfully",
-            company=company
+            company=company,
+            user=user
         )
 
 

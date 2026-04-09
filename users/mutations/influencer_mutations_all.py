@@ -22,6 +22,7 @@ from ..influencer_node import (
     FrequencePublicationEnum, TypeCollaborationEnum
 )
 from ..utils import normalize_role, check_user_role
+from ..user_node import UserNode
 from category.models import Category
 
 User = get_user_model()
@@ -125,6 +126,7 @@ class CompleteInfluencerProfile(graphene.Mutation):
     """Complete influencer profile with all information"""
     
     influencer = graphene.Field(InfluencerNode)
+    user = graphene.Field(UserNode)
     success = graphene.Boolean()
     message = graphene.String()
     
@@ -395,6 +397,7 @@ class CompleteInfluencerProfile(graphene.Mutation):
         
         return CompleteInfluencerProfile(
             influencer=influencer,
+            user=user,
             success=True,
             message='Influencer profile completed successfully. Pending admin verification.'
         )

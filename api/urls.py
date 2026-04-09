@@ -16,4 +16,11 @@ urlpatterns = [
     
     # Influencer Detail
     path('influencer/<int:influencer_id>/', views.InfluencerDetailView.as_view(), name='influencer-detail'),
+
+    # Profile Image Upload (REST fallback)
+    path('upload-profile-image/', views.UploadProfileImageView.as_view(), name='upload-profile-image'),
+
+    # Onboarding helpers
+    path('selected-instagram-posts/', views.SelectedInstagramPostsView.as_view(), name='selected-instagram-posts'),
+    path('profile-assets/', views.ProfileAssetsView.as_view(), name='profile-assets'),
 ]

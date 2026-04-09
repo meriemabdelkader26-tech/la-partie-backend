@@ -100,24 +100,122 @@ class Influencer(models.Model):
     
     def __str__(self):
         return f"{self.user.name} - {self.pseudo or 'No pseudo'}"
+
+    def _extract_instagram_numeric(self, keys, default=0.0):
+        """Best-effort parser for numeric values stored in instagram_data."""
+        data = self.instagram_data or {}
+        if not isinstance(data, dict):
+            return default
+
+        for key in keys:
+            raw_value = data.get(key)
+            if raw_value is None:
+                continue
+
+            if isinstance(raw_value, dict):
+                if "count" in raw_value:
+                    raw_value = raw_value.get("count")
+                elif "value" in raw_value:
+                    raw_value = raw_value.get("value")
+                else:
+                    continue
+
+            if isinstance(raw_value, (int, float)):
+                return float(raw_value)
+
+            text = str(raw_value).replace(',', '').replace('%', '').strip()
+            try:
+                return float(text)
+            except (TypeError, ValueError):
+                continue
+
+        return default
     
     @property
     def followers_totaux(self):
         """Calculate total followers across all platforms"""
-        return sum(rs.nombre_abonnes for rs in self.reseaux_sociaux.all())
+        social_total = sum(rs.nombre_abonnes for rs in self.reseaux_sociaux.all())
+        if social_total > 0:
+            return social_total
+
+        # Fallback to imported Instagram profile data when social networks are not saved yet.
+        fallback = self._extract_instagram_numeric(
+            [
+                'followers',
+                'follower_count',
+                'followers_count',
+                'edge_followed_by',
+                'nombre_abonnes',
+            ],
+            default=0.0,
+        )
+        if fallback > 0:
+            return int(fallback)
+
+        # Final fallback for legacy profiles: infer a rough audience size from content views.
+        reels = list(self.instagram_reels.all())
+        total_views = sum((reel.views or 0) for reel in reels)
+        if total_views > 0 and len(reels) > 0:
+            avg_views = total_views / len(reels)
+            return int(avg_views)
+
+        return 0
     
     @property
     def engagement_moyen_global(self):
         """Calculate average engagement across all platforms"""
         reseaux = self.reseaux_sociaux.all()
-        if not reseaux:
+        if reseaux:
+            return sum(rs.taux_engagement for rs in reseaux) / len(reseaux)
+
+        direct_engagement = self._extract_instagram_numeric(
+            [
+                'engagement_rate',
+                'taux_engagement',
+                'engagement',
+            ],
+            default=0.0,
+        )
+        if direct_engagement > 0:
+            return direct_engagement
+
+        followers = max(self.followers_totaux, 0)
+        posts = list(self.instagram_posts.all())
+        reels = list(self.instagram_reels.all())
+        total_content = len(posts) + len(reels)
+        if total_content == 0:
             return 0.0
-        return sum(rs.taux_engagement for rs in reseaux) / len(reseaux)
+
+        total_interactions = 0
+        for post in posts:
+            total_interactions += (post.likes or 0) + (post.comments or 0)
+        for reel in reels:
+            total_interactions += (reel.likes or 0) + (reel.comments or 0)
+
+        avg_interactions_per_content = total_interactions / total_content
+        if followers > 0:
+            return (avg_interactions_per_content / followers) * 100
+
+        # Last fallback when followers are missing: use reel views as denominator.
+        total_views = sum((reel.views or 0) for reel in reels)
+        if total_views > 0:
+            return (total_interactions / total_views) * 100
+
+        return 0.0
     
     def calculate_croissance_mensuelle(self):
-        """Calculate monthly growth (placeholder for future implementation)"""
-        # This would require historical data tracking
-        return 0.0
+        """Calculate monthly growth from historical snapshots when available."""
+        snapshots = self.statistiques_historique.order_by('-mois')[:2]
+        if len(snapshots) < 2:
+            return 0.0
+
+        current_followers = snapshots[0].followers_totaux or 0
+        previous_followers = snapshots[1].followers_totaux or 0
+
+        if previous_followers <= 0:
+            return 0.0
+
+        return ((current_followers - previous_followers) / previous_followers) * 100
 
 
 class ReseauSocial(models.Model):

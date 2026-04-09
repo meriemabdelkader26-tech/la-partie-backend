@@ -1,4 +1,4 @@
-# 🚀 Brandfluence - Influencer Marketing Platform
+# 🚀 InfluBridge - Influencer Marketing Platform
 
 <div align="center">
 
@@ -34,9 +34,9 @@
 
 ## 🌟 Overview
 
-**Brandfluence** is a comprehensive influencer marketing platform that connects brands with influencers through an intelligent matching system. The platform leverages machine learning algorithms to recommend the best influencer-brand matches based on various criteria including category, engagement, reach, and audience demographics.
+**InfluBridge** is a comprehensive influencer marketing platform that connects brands with influencers through an intelligent matching system. The platform leverages machine learning algorithms to recommend the best influencer-brand matches based on various criteria including category, engagement, reach, and audience demographics.
 
-### What Makes Brandfluence Special?
+### What Makes InfluBridge Special?
 
 - **AI-Powered Recommendations**: Multiple ML models (Cosine Similarity, K-Nearest Neighbors, Content-Based Filtering) for intelligent influencer-brand matching
 - **Three-Tier User System**: Separate workflows for Admins, Companies, and Influencers
@@ -176,9 +176,9 @@
 ## 🏗 Project Architecture
 
 ```
-brandfluence/
+influBridge/
 │
-├── 📂 brandfluence/              # Main project configuration
+├── 📂 influBridge/              # Main project configuration
 │   ├── settings.py               # Django settings with environment configs
 │   ├── urls.py                   # Main URL routing
 │   ├── schema.py                 # Root GraphQL schema
@@ -275,8 +275,8 @@ Before you begin, ensure you have the following installed:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/brandfluence.git
-cd brandfluence
+git clone https://github.com/yourusername/influBridge.git
+cd influBridge
 ```
 
 Or just download and extract the project folder.
@@ -327,7 +327,7 @@ DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Database Configuration (Optional - defaults to SQLite)
-DATABASE_URL=postgresql://user:password@localhost:5432/brandfluence
+DATABASE_URL=postgresql://user:password@localhost:5432/influBridge
 
 # Email Configuration (Optional)
 EMAIL_HOST=smtp.gmail.com
@@ -371,15 +371,15 @@ No configuration needed. Django will create `db.sqlite3` automatically.
 1. Install PostgreSQL and create a database:
 
 ```sql
-CREATE DATABASE brandfluence;
-CREATE USER brandfluence_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE brandfluence TO brandfluence_user;
+CREATE DATABASE influBridge;
+CREATE USER influBridge_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE influBridge TO influBridge_user;
 ```
 
 2. Update `.env` file:
 
 ```env
-DATABASE_URL=postgresql://brandfluence_user:your_password@localhost:5432/brandfluence
+DATABASE_URL=postgresql://influBridge_user:your_password@localhost:5432/influBridge
 ```
 
 ### Step 4: Run Migrations
@@ -438,10 +438,10 @@ The server will start at: `http://127.0.0.1:8000/`
 
 ```bash
 # Build the Docker image
-docker build -t brandfluence .
+docker build -t influBridge .
 
 # Run the container
-docker run -p 8080:8080 --env-file .env brandfluence
+docker run -p 8080:8080 --env-file .env influBridge
 ```
 
 #### Using Docker Compose (if you have docker-compose.yml)
@@ -1052,12 +1052,12 @@ gcloud config set project YOUR_PROJECT_ID
 gcloud builds submit --config cloudbuild.yaml
 
 # Or build locally and push
-docker build -t gcr.io/YOUR_PROJECT_ID/brandfluence .
-docker push gcr.io/YOUR_PROJECT_ID/brandfluence
+docker build -t gcr.io/YOUR_PROJECT_ID/influBridge .
+docker push gcr.io/YOUR_PROJECT_ID/influBridge
 
 # Deploy to Cloud Run
-gcloud run deploy brandfluence \
-  --image gcr.io/YOUR_PROJECT_ID/brandfluence \
+gcloud run deploy influBridge \
+  --image gcr.io/YOUR_PROJECT_ID/influBridge \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
@@ -1067,7 +1067,7 @@ gcloud run deploy brandfluence \
 2. **Set environment variables:**
 
 ```bash
-gcloud run services update brandfluence \
+gcloud run services update influBridge \
   --set-env-vars="DATABASE_URL=postgresql://...,SECRET_KEY=..."
 ```
 
@@ -1083,7 +1083,7 @@ gcloud run services update brandfluence \
 2. Connect your GitHub repository
 3. Configure:
    - **Build Command**: `pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate`
-   - **Start Command**: `gunicorn brandfluence.wsgi:application`
+   - **Start Command**: `gunicorn influBridge.wsgi:application`
 4. Add environment variables in Render dashboard
 5. Deploy!
 
@@ -1107,7 +1107,7 @@ vercel --prod
 
 ```bash
 # Build production image
-docker build -t brandfluence:production .
+docker build -t influBridge:production .
 
 # Run with production settings
 docker run -d \
@@ -1115,8 +1115,8 @@ docker run -d \
   -e DEBUG=False \
   -e SECRET_KEY=your-production-secret \
   -e DATABASE_URL=your-db-url \
-  --name brandfluence-prod \
-  brandfluence:production
+  --name influBridge-prod \
+  influBridge:production
 ```
 
 ---
@@ -1263,14 +1263,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Getting Help
 
 - **Documentation**: Check the `/docs` folder and inline documentation
-- **Issues**: [Open an issue](https://github.com/yourusername/brandfluence/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/brandfluence/discussions)
+- **Issues**: [Open an issue](https://github.com/yourusername/influBridge/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/influBridge/discussions)
 
 ### Contact
 
-- **Email**: support@brandfluence.com
-- **Website**: https://brandfluence.com
-- **Twitter**: [@brandfluence](https://twitter.com/brandfluence)
+- **Email**: support@influBridge.com
+- **Website**: https://influBridge.com
+- **Twitter**: [@influBridge](https://twitter.com/influBridge)
 
 ---
 
@@ -1333,10 +1333,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Made with ❤️ by the Brandfluence Team**
+**Made with ❤️ by the InfluBridge Team**
 
 ⭐ **Star this repo if you find it helpful!** ⭐
 
-[Report Bug](https://github.com/yourusername/brandfluence/issues) • [Request Feature](https://github.com/yourusername/brandfluence/issues) • [Documentation](https://docs.brandfluence.com)
+[Report Bug](https://github.com/yourusername/influBridge/issues) • [Request Feature](https://github.com/yourusername/influBridge/issues) • [Documentation](https://docs.influBridge.com)
 
 </div>

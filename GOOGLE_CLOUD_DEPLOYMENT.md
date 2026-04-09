@@ -1,6 +1,6 @@
 # Google Cloud Deployment Guide
 
-This guide explains how to deploy your Brandfluence Django application to Google Cloud.
+This guide explains how to deploy your InfluBridge Django application to Google Cloud.
 
 ## Prerequisites
 
@@ -44,10 +44,10 @@ You have two main options for deploying to Google Cloud:
 gcloud auth login
 
 # Create a new project (or use existing)
-gcloud projects create brandfluence-app --name="Brandfluence"
+gcloud projects create influBridge-app --name="InfluBridge"
 
 # Set the project
-gcloud config set project brandfluence-app
+gcloud config set project influBridge-app
 
 # Enable required APIs
 gcloud services enable cloudbuild.googleapis.com
@@ -59,22 +59,22 @@ gcloud services enable containerregistry.googleapis.com
 
 ```bash
 # Create PostgreSQL instance
-gcloud sql instances create brandfluence-db \
+gcloud sql instances create influBridge-db \
     --database-version=POSTGRES_15 \
     --tier=db-f1-micro \
     --region=us-central1
 
 # Create database
-gcloud sql databases create brandfluence \
-    --instance=brandfluence-db
+gcloud sql databases create influBridge \
+    --instance=influBridge-db
 
 # Create database user
 gcloud sql users create dbuser \
-    --instance=brandfluence-db \
+    --instance=influBridge-db \
     --password=YOUR_SECURE_PASSWORD
 
 # Get connection string
-gcloud sql instances describe brandfluence-db
+gcloud sql instances describe influBridge-db
 ```
 
 ### Step 3: Build and Deploy with Cloud Build
@@ -85,11 +85,11 @@ gcloud builds submit --config cloudbuild.yaml
 
 # Or manual deployment:
 # Build the image
-gcloud builds submit --tag gcr.io/brandfluence-app/brandfluence
+gcloud builds submit --tag gcr.io/influBridge-app/influBridge
 
 # Deploy to Cloud Run
-gcloud run deploy brandfluence \
-    --image gcr.io/brandfluence-app/brandfluence \
+gcloud run deploy influBridge \
+    --image gcr.io/influBridge-app/influBridge \
     --platform managed \
     --region us-central1 \
     --allow-unauthenticated \
@@ -98,7 +98,7 @@ gcloud run deploy brandfluence \
     --max-instances 10 \
     --set-env-vars "DEBUG=False" \
     --set-env-vars "SECRET_KEY=your-secret-key-here" \
-    --set-env-vars "DATABASE_URL=postgresql://dbuser:password@/brandfluence?host=/cloudsql/brandfluence-app:us-central1:brandfluence-db" \
+    --set-env-vars "DATABASE_URL=postgresql://dbuser:password@/influBridge?host=/cloudsql/influBridge-app:us-central1:influBridge-db" \
     --set-env-vars "ALLOWED_HOSTS=*"
 ```
 
@@ -110,7 +110,7 @@ echo -n "your-secret-key-here" | gcloud secrets create django-secret-key --data-
 echo -n "postgresql://..." | gcloud secrets create database-url --data-file=-
 
 # Update Cloud Run service to use secrets
-gcloud run services update brandfluence \
+gcloud run services update influBridge \
     --update-secrets=SECRET_KEY=django-secret-key:latest \
     --update-secrets=DATABASE_URL=database-url:latest
 ```
@@ -119,17 +119,17 @@ gcloud run services update brandfluence \
 
 ```bash
 # Get the Cloud Run service URL
-gcloud run services describe brandfluence --region us-central1
+gcloud run services describe influBridge --region us-central1
 
 # Run migrations (via Cloud Run job or manually)
-gcloud run jobs create brandfluence-migrate \
-    --image gcr.io/brandfluence-app/brandfluence \
+gcloud run jobs create influBridge-migrate \
+    --image gcr.io/influBridge-app/influBridge \
     --region us-central1 \
     --command python \
     --args "manage.py,migrate"
 
 # Execute the job
-gcloud run jobs execute brandfluence-migrate
+gcloud run jobs execute influBridge-migrate
 ```
 
 ---
@@ -141,7 +141,7 @@ gcloud run jobs execute brandfluence-migrate
 ```bash
 # Login and set project (same as above)
 gcloud auth login
-gcloud config set project brandfluence-app
+gcloud config set project influBridge-app
 
 # Enable App Engine
 gcloud app create --region=us-central
@@ -179,7 +179,7 @@ gcloud app browse
 
 ```bash
 # Connect to Cloud SQL Proxy
-cloud_sql_proxy -instances=brandfluence-app:us-central1:brandfluence-db=tcp:5432
+cloud_sql_proxy -instances=influBridge-app:us-central1:influBridge-db=tcp:5432
 
 # In another terminal
 python manage.py migrate
@@ -225,7 +225,7 @@ Before deploying, test your Docker container locally:
 
 ```bash
 # Build the image
-docker build -t brandfluence .
+docker build -t influBridge .
 
 # Run the container
 docker run -p 8080:8080 \
@@ -233,7 +233,7 @@ docker run -p 8080:8080 \
     -e DATABASE_URL="your-database-url" \
     -e DEBUG="False" \
     -e ALLOWED_HOSTS="localhost,127.0.0.1" \
-    brandfluence
+    influBridge
 
 # Access at http://localhost:8080
 ```
@@ -249,7 +249,7 @@ docker run -p 8080:8080 \
 
 ```bash
 gcloud builds triggers create github \
-    --repo-name=brandfluence \
+    --repo-name=influBridge \
     --repo-owner=YOUR_GITHUB_USERNAME \
     --branch-pattern="^main$" \
     --build-config=cloudbuild.yaml
@@ -263,7 +263,7 @@ gcloud builds triggers create github \
 
 ```bash
 # View Cloud Run logs
-gcloud run services logs read brandfluence --region us-central1
+gcloud run services logs read influBridge --region us-central1
 
 # View App Engine logs
 gcloud app logs tail -s default
@@ -303,16 +303,16 @@ gcloud run services list  # For Cloud Run
 gcloud app services list  # For App Engine
 
 # View service details
-gcloud run services describe brandfluence --region us-central1
+gcloud run services describe influBridge --region us-central1
 
 # Update service with new environment variable
-gcloud run services update brandfluence --set-env-vars "NEW_VAR=value"
+gcloud run services update influBridge --set-env-vars "NEW_VAR=value"
 
 # View logs
-gcloud run services logs tail brandfluence
+gcloud run services logs tail influBridge
 
 # Delete service
-gcloud run services delete brandfluence
+gcloud run services delete influBridge
 gcloud app services delete default
 ```
 
@@ -322,7 +322,7 @@ gcloud app services delete default
 
 ### Issue: Container fails to start
 
-- Check logs: `gcloud run services logs read brandfluence`
+- Check logs: `gcloud run services logs read influBridge`
 - Verify environment variables are set correctly
 - Test Docker image locally first
 

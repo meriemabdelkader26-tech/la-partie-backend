@@ -49,7 +49,7 @@ USER appuser
 EXPOSE 8080
 
 # Run the application with gunicorn
-CMD exec gunicorn brandfluence.wsgi:application \
+CMD exec gunicorn influBridge.wsgi:application \
     --bind 0.0.0.0:$PORT \
     --workers 4 \
     --threads 2 \

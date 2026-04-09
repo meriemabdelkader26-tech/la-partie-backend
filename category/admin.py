@@ -31,7 +31,7 @@ class CategoryAdmin(admin.ModelAdmin):
     def status_badge(self, obj):
         """Show colored status badge"""
         if obj.is_active:
-            return format_html('<span style="color: green;">✓ Active</span>')
+            return format_html('<span style="color: #ec4899;">✓ Active</span>')
         return format_html('<span style="color: red;">✗ Inactive</span>')
     status_badge.short_description = 'Status'
     

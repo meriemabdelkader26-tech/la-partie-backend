@@ -14,7 +14,7 @@ automatic_scaling:
   max_concurrent_requests: 50
 
 # Entry point
-entrypoint: gunicorn -b :$PORT brandfluence.wsgi:application --workers 4 --threads 2 --timeout 120
+entrypoint: gunicorn -b :$PORT influBridge.wsgi:application --workers 4 --threads 2 --timeout 120
 
 # Environment variables (add your specific values)
 env_variables:

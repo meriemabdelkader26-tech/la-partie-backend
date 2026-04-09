@@ -1,12 +1,12 @@
 services:
   - type: web
-    name: brandfluence-backend
+    name: influBridge-backend
     env: python
     region: oregon
     plan: free
     branch: main
     buildCommand: "./build.sh"
-    startCommand: "gunicorn brandfluence.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120"
+    startCommand: "gunicorn influBridge.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120"
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.16

@@ -3,13 +3,37 @@ from graphql import GraphQLError
 from graphql_relay import from_global_id
 from django.contrib.auth import get_user_model
 from graphene_django.filter import DjangoFilterConnectionField
+from django.db.models import Sum, Q
 
 from ..influencer_models import Influencer
 from ..influencer_node import InfluencerNode
 from ..filters import InfluencerFilter
 from ..utils import check_user_role, normalize_role
+from offer.models import OfferApplication, ApplicationStatus, PaymentStatus
 
 User = get_user_model()
+
+
+class InfluencerKpiDebugType(graphene.ObjectType):
+    earnings_source = graphene.String()
+    earnings_released_total = graphene.Float()
+    earnings_approved_total = graphene.Float()
+    earnings_final_total = graphene.Float()
+
+    reach_source = graphene.String()
+    reach_social_total = graphene.Int()
+    reach_instagram_total = graphene.Int()
+    reach_final_total = graphene.Int()
+
+    engagement_source = graphene.String()
+    engagement_social_avg = graphene.Float()
+    engagement_instagram_value = graphene.Float()
+    engagement_content_value = graphene.Float()
+    engagement_final_value = graphene.Float()
+
+    social_networks_count = graphene.Int()
+    instagram_posts_count = graphene.Int()
+    instagram_reels_count = graphene.Int()
 
 
 class InfluencerQueries(graphene.ObjectType):
@@ -17,6 +41,7 @@ class InfluencerQueries(graphene.ObjectType):
     
     # Get current user's influencer profile
     my_influencer_profile = graphene.Field(InfluencerNode)
+    my_influencer_kpi_debug = graphene.Field(InfluencerKpiDebugType)
     
     # Get influencer by user ID
     influencer_by_user = graphene.Field(
@@ -72,6 +97,157 @@ class InfluencerQueries(graphene.ObjectType):
             return Influencer.objects.get(user=user)
         except Influencer.DoesNotExist:
             return None
+
+    def resolve_my_influencer_kpi_debug(self, info):
+        """Return KPI values and their data sources for fast troubleshooting."""
+        user = info.context.user
+
+        if not user.is_authenticated:
+            raise GraphQLError('Authentication required')
+
+        if not check_user_role(user, 'INFLUENCER'):
+            raise GraphQLError('This query is only available for influencer accounts')
+
+        try:
+            influencer = Influencer.objects.prefetch_related(
+                'reseaux_sociaux',
+                'instagram_posts',
+                'instagram_reels',
+                'statistiques_historique',
+            ).get(user=user)
+        except Influencer.DoesNotExist:
+            return InfluencerKpiDebugType(
+                earnings_source='no_profile',
+                earnings_released_total=0.0,
+                earnings_approved_total=0.0,
+                earnings_final_total=0.0,
+                reach_source='no_profile',
+                reach_social_total=0,
+                reach_instagram_total=0,
+                reach_final_total=0,
+                engagement_source='no_profile',
+                engagement_social_avg=0.0,
+                engagement_instagram_value=0.0,
+                engagement_content_value=0.0,
+                engagement_final_value=0.0,
+                social_networks_count=0,
+                instagram_posts_count=0,
+                instagram_reels_count=0,
+            )
+
+        applications = OfferApplication.objects.filter(user=user)
+
+        released_total = float(
+            applications.filter(
+                Q(payment_status=PaymentStatus.RELEASED)
+                | Q(payment_status__iexact='released')
+                | Q(payment_status__icontains='released')
+            ).aggregate(total=Sum('asking_price'))['total']
+            or 0
+        )
+
+        approved_total = float(
+            applications.filter(
+                Q(status=ApplicationStatus.APPROVED)
+                | Q(status__iexact='approved')
+                | Q(status__icontains='approved')
+            ).aggregate(total=Sum('asking_price'))['total']
+            or 0
+        )
+
+        if released_total > 0:
+            earnings_source = 'released'
+            earnings_final_total = released_total
+        elif approved_total > 0:
+            earnings_source = 'approved_fallback'
+            earnings_final_total = approved_total
+        else:
+            earnings_source = 'none'
+            earnings_final_total = 0.0
+
+        social_networks = list(influencer.reseaux_sociaux.all())
+        social_networks_count = len(social_networks)
+        social_total = int(sum((rs.nombre_abonnes or 0) for rs in social_networks))
+        instagram_total = int(
+            influencer._extract_instagram_numeric(
+                ['followers', 'follower_count', 'followers_count', 'edge_followed_by', 'nombre_abonnes'],
+                default=0.0,
+            )
+        )
+
+        if social_total > 0:
+            reach_source = 'reseaux_sociaux'
+            reach_final_total = social_total
+        elif instagram_total > 0:
+            reach_source = 'instagram_data'
+            reach_final_total = instagram_total
+        else:
+            reels = list(influencer.instagram_reels.all())
+            views_total = sum((reel.views or 0) for reel in reels)
+            if views_total > 0 and len(reels) > 0:
+                reach_source = 'reels_views_estimate'
+                reach_final_total = int(views_total / len(reels))
+            else:
+                reach_source = 'none'
+                reach_final_total = 0
+
+        social_avg = 0.0
+        if social_networks_count > 0:
+            social_avg = float(sum((rs.taux_engagement or 0.0) for rs in social_networks) / social_networks_count)
+
+        instagram_engagement = float(
+            influencer._extract_instagram_numeric(
+                ['engagement_rate', 'taux_engagement', 'engagement'],
+                default=0.0,
+            )
+        )
+
+        posts = list(influencer.instagram_posts.all())
+        reels = list(influencer.instagram_reels.all())
+        instagram_posts_count = len(posts)
+        instagram_reels_count = len(reels)
+        total_content = instagram_posts_count + instagram_reels_count
+        total_interactions = 0
+        for post in posts:
+            total_interactions += (post.likes or 0) + (post.comments or 0)
+        for reel in reels:
+            total_interactions += (reel.likes or 0) + (reel.comments or 0)
+
+        engagement_content_value = 0.0
+        if total_content > 0 and reach_final_total > 0:
+            engagement_content_value = float((total_interactions / total_content) / reach_final_total * 100)
+
+        if social_avg > 0:
+            engagement_source = 'reseaux_sociaux'
+            engagement_final_value = social_avg
+        elif instagram_engagement > 0:
+            engagement_source = 'instagram_data'
+            engagement_final_value = instagram_engagement
+        elif engagement_content_value > 0:
+            engagement_source = 'posts_reels_computed'
+            engagement_final_value = engagement_content_value
+        else:
+            engagement_source = 'none'
+            engagement_final_value = 0.0
+
+        return InfluencerKpiDebugType(
+            earnings_source=earnings_source,
+            earnings_released_total=released_total,
+            earnings_approved_total=approved_total,
+            earnings_final_total=earnings_final_total,
+            reach_source=reach_source,
+            reach_social_total=social_total,
+            reach_instagram_total=instagram_total,
+            reach_final_total=reach_final_total,
+            engagement_source=engagement_source,
+            engagement_social_avg=social_avg,
+            engagement_instagram_value=instagram_engagement,
+            engagement_content_value=engagement_content_value,
+            engagement_final_value=engagement_final_value,
+            social_networks_count=social_networks_count,
+            instagram_posts_count=instagram_posts_count,
+            instagram_reels_count=instagram_reels_count,
+        )
     
     def resolve_influencer_by_user(self, info, user_id):
         """Get influencer profile by user ID (accepts both integer and global ID)"""

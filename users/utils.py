@@ -1,14 +1,13 @@
 """Utility functions for user management"""
-import uuid
 import random
+import uuid
 from datetime import timedelta
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from django.utils import timezone
-from django.conf import settings
+
 from django.apps import apps
+from django.utils import timezone
 from graphql_jwt.utils import jwt_payload as default_jwt_payload
+
+from .email_service import EmailService
 
 
 def normalize_role(role):
@@ -89,6 +88,9 @@ def generate_verification_token(user):
     """
     VerifyToken = apps.get_model('users', 'VerifyToken')
     
+    # Mark previous unused tokens as used to keep one valid code per user.
+    VerifyToken.objects.filter(user=user, is_used=False).update(is_used=True)
+
     # Generate unique token
     token = str(uuid.uuid4())
     
@@ -121,34 +123,8 @@ def send_verification_email(user, token, code):
     Returns:
         Boolean indicating success
     """
-    try:
-        # Generate verification link
-        verification_link = f"{settings.FRONTEND_URL}/verify-email/{token}?email={user.email}"
-        
-        # Render HTML email
-        html_message = render_to_string('emails/verify_email.html', {
-            'user_name': user.name,
-            'verification_link': verification_link,
-            'verification_code': code,
-        })
-        
-        # Create plain text version
-        plain_message = strip_tags(html_message)
-        
-        # Send email
-        send_mail(
-            subject='Verify Your Email - BrandFluence',
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
-        
-        return True
-    except Exception as e:
-        print(f"Error sending verification email: {str(e)}")
-        return False
+    success, message = EmailService.send_verification_email(user, token, code)
+    return success
 
 
 def verify_email_token(token, email):
@@ -163,6 +139,8 @@ def verify_email_token(token, email):
         Tuple of (success: bool, message: str, user: User or None)
     """
     VerifyToken = apps.get_model('users', 'VerifyToken')
+    email = (email or '').strip().lower()
+    token = (token or '').strip()
     
     try:
         # Get the verification token
@@ -209,6 +187,8 @@ def verify_email_code(code, email):
         Tuple of (success: bool, message: str, user: User or None)
     """
     VerifyToken = apps.get_model('users', 'VerifyToken')
+    email = (email or '').strip().lower()
+    code = (code or '').strip()
     
     try:
         # Get the verification token by code and email
@@ -285,34 +265,8 @@ def send_password_reset_email(user, token, code):
     Returns:
         Boolean indicating success
     """
-    try:
-        # Generate password reset link
-        reset_link = f"{settings.FRONTEND_URL}/reset-password/{token}?email={user.email}"
-        
-        # Render HTML email
-        html_message = render_to_string('emails/reset_password.html', {
-            'user_name': user.name,
-            'reset_link': reset_link,
-            'reset_code': code,
-        })
-        
-        # Create plain text version
-        plain_message = strip_tags(html_message)
-        
-        # Send email
-        send_mail(
-            subject='Reset Your Password - BrandFluence',
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
-        
-        return True
-    except Exception as e:
-        print(f"Error sending password reset email: {str(e)}")
-        return False
+    success, message = EmailService.send_password_reset_email(user, token, code)
+    return success
 
 
 def verify_password_reset_token(token, email):

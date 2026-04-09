@@ -37,7 +37,7 @@ class OfferAdmin(admin.ModelAdmin):
     def budget_range(self, obj):
         """Display budget range in formatted way"""
         return format_html(
-            '<span style="color: #0066cc;">${} - ${}</span>',
+            '<span style="color: #ec4899;">${} - ${}</span>',
             f'{obj.min_budget:,.2f}',
             f'{obj.max_budget:,.2f}'
         )
@@ -57,7 +57,7 @@ class OfferAdmin(admin.ModelAdmin):
     def applications_count(self, obj):
         """Show number of applications"""
         count = obj.applications.count()
-        color = 'green' if count > 0 else 'gray'
+        color = '#ec4899' if count > 0 else 'gray'
         return format_html(
             '<span style="color: {}; font-weight: bold;">{} applications</span>',
             color,
@@ -105,7 +105,7 @@ class OfferApplicationAdmin(admin.ModelAdmin):
     def asking_price_formatted(self, obj):
         """Display asking price formatted"""
         return format_html(
-            '<span style="color: #0066cc; font-weight: bold;">${}</span>',
+            '<span style="color: #ec4899; font-weight: bold;">${}</span>',
             f'{obj.asking_price:,.2f}'
         )
     asking_price_formatted.short_description = 'Asking Price'

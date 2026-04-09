@@ -4,7 +4,7 @@ Fix corrupted disponibilite_collaboration enum values
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'brandfluence.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'influBridge.settings')
 django.setup()
 
 from users.influencer_models import Influencer

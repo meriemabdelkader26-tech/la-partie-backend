@@ -4,7 +4,7 @@ Check influencer data for specific user
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'brandfluence.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'influBridge.settings')
 django.setup()
 
 from users.influencer_models import Influencer, Image

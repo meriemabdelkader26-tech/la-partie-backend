@@ -6,6 +6,9 @@ import graphene
 from graphql import GraphQLError
 from graphql_relay import from_global_id
 from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 from ..user_node import UserNode, UserRoleEnum
 from ..utils import generate_verification_token, send_verification_email, verify_email_token, verify_email_code
 
@@ -17,6 +20,7 @@ class RegisterUser(graphene.Mutation):
     user = graphene.Field(UserNode)
     success = graphene.Boolean()
     message = graphene.String()
+    verification_code = graphene.String()
     
     class Arguments:
         email = graphene.String(required=True)
@@ -26,9 +30,39 @@ class RegisterUser(graphene.Mutation):
         role = graphene.Argument(UserRoleEnum, required=True)
     
     def mutate(self, info, email, password, name, role, phone_number=None):
+        email = (email or '').strip().lower()
+        verification_required = getattr(settings, 'EMAIL_VERIFICATION_REQUIRED', False)
+
         # Check if user already exists
-        if User.objects.filter(email=email).exists():
-            raise GraphQLError('User with this email already exists')
+        existing_user = User.objects.filter(email=email).first()
+        if existing_user:
+            if existing_user.email_verified:
+                raise GraphQLError('User with this email already exists')
+
+            if not verification_required:
+                existing_user.verify_email()
+                return RegisterUser(
+                    user=existing_user,
+                    success=True,
+                    message='Account already existed and is now automatically verified.',
+                    verification_code=None
+                )
+
+            # Idempotent register flow for non-verified users.
+            verify_token = generate_verification_token(existing_user)
+            email_sent = send_verification_email(existing_user, verify_token.token, verify_token.code)
+
+            if not email_sent:
+                raise GraphQLError(
+                    'Registration exists but verification email could not be sent. Please retry in a moment.'
+                )
+
+            return RegisterUser(
+                user=existing_user,
+                success=True,
+                message='Account already exists but is not verified. A new verification code was sent.',
+                verification_code=verify_token.code if (settings.DEBUG and getattr(settings, 'DEBUG_EMAIL', False)) else None
+            )
         
         # Validate password
         if len(password) < 8:
@@ -42,6 +76,15 @@ class RegisterUser(graphene.Mutation):
             role=role,
             phone_number=phone_number
         )
+
+        if not verification_required:
+            user.verify_email()
+            return RegisterUser(
+                user=user,
+                success=True,
+                message='User registered successfully. Email verification is currently disabled.',
+                verification_code=None
+            )
         
         # Generate verification token
         verify_token = generate_verification_token(user)
@@ -60,7 +103,8 @@ class RegisterUser(graphene.Mutation):
         return RegisterUser(
             user=user,
             success=True,
-            message='User registered successfully! Please check your email to verify your account.'
+            message='User registered successfully! Please check your email to verify your account.',
+            verification_code=verify_token.code if (settings.DEBUG and getattr(settings, 'DEBUG_EMAIL', False)) else None
         )
 
 
@@ -75,6 +119,19 @@ class VerifyEmailWithToken(graphene.Mutation):
         email = graphene.String(required=True)
     
     def mutate(self, info, token, email):
+        if not getattr(settings, 'EMAIL_VERIFICATION_REQUIRED', False):
+            normalized_email = (email or '').strip().lower()
+            user = User.objects.filter(email=normalized_email).first()
+            if not user:
+                raise GraphQLError('User not found.')
+            if not user.email_verified:
+                user.verify_email()
+            return VerifyEmailWithToken(
+                user=user,
+                success=True,
+                message='Email verification is disabled. Account is already verified.'
+            )
+
         # Verify the token
         success, message, user = verify_email_token(token, email)
         
@@ -99,6 +156,19 @@ class VerifyEmailWithCode(graphene.Mutation):
         email = graphene.String(required=True)
     
     def mutate(self, info, code, email):
+        if not getattr(settings, 'EMAIL_VERIFICATION_REQUIRED', False):
+            normalized_email = (email or '').strip().lower()
+            user = User.objects.filter(email=normalized_email).first()
+            if not user:
+                raise GraphQLError('User not found.')
+            if not user.email_verified:
+                user.verify_email()
+            return VerifyEmailWithCode(
+                user=user,
+                success=True,
+                message='Email verification is disabled. Account is already verified.'
+            )
+
         # Validate code format
         if not code.isdigit() or len(code) != 6:
             raise GraphQLError('Verification code must be exactly 6 digits.')
@@ -120,12 +190,21 @@ class ResendVerificationEmail(graphene.Mutation):
     """Resend verification email to user"""
     success = graphene.Boolean()
     message = graphene.String()
+    verification_code = graphene.String()
     
     class Arguments:
         email = graphene.String(required=True)
     
     def mutate(self, info, email):
+        if not getattr(settings, 'EMAIL_VERIFICATION_REQUIRED', False):
+            return ResendVerificationEmail(
+                success=False,
+                message='Email verification is disabled. No verification code is required.',
+                verification_code=None
+            )
+
         try:
+            email = (email or '').strip().lower()
             user = User.objects.get(email=email)
             
             # Check if already verified
@@ -135,6 +214,14 @@ class ResendVerificationEmail(graphene.Mutation):
                     message='Email is already verified.'
                 )
             
+            latest_token = user.verify_tokens.order_by('-created_at').first()
+            if latest_token and latest_token.created_at >= timezone.now() - timedelta(seconds=60):
+                return ResendVerificationEmail(
+                    success=False,
+                    message='Please wait 60 seconds before requesting a new code.',
+                    verification_code=latest_token.code if (settings.DEBUG and getattr(settings, 'DEBUG_EMAIL', False)) else None
+                )
+
             # Generate new verification token
             verify_token = generate_verification_token(user)
             
@@ -146,14 +233,16 @@ class ResendVerificationEmail(graphene.Mutation):
             
             return ResendVerificationEmail(
                 success=True,
-                message='Verification email sent successfully! Please check your inbox.'
+                message='Verification email sent successfully! Please check your inbox.',
+                verification_code=verify_token.code if (settings.DEBUG and getattr(settings, 'DEBUG_EMAIL', False)) else None
             )
             
         except User.DoesNotExist:
             # Don't reveal if email exists for security
             return ResendVerificationEmail(
                 success=True,
-                message='If the email exists, a verification link has been sent.'
+                message='If the email exists, a verification link has been sent.',
+                verification_code=None
             )
 
 
