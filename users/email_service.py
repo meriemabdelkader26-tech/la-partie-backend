@@ -26,6 +26,7 @@ class EmailService:
         Returns:
             Tuple (success: bool, message: str)
         """
+        print(">>> ENVOI EMAIL VERIF à", user.email, "avec code", code)
         try:
             # Generate verification link
             verification_link = f"{settings.FRONTEND_URL}/verify-email/{token}?email={user.email}"
@@ -119,7 +120,7 @@ class EmailService:
             logger.error(f"❌ Error sending password reset email: {error_msg}")
             
             if settings.DEBUG and os.getenv('DEBUG_EMAIL', 'False') == 'True':
-                logger.warning(f"⚠️ DEBUG MODE: Reset email would have been sent")
+                print(f"[DEBUG] Tentative d'envoi d'email de vérification à {user.email} avec code {code}")
                 return True, "Email logged to console (DEBUG mode)"
             
             return False, f"Failed to send email: {error_msg}"

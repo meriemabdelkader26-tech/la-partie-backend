@@ -50,6 +50,7 @@ class RegisterUser(graphene.Mutation):
 
             # Idempotent register flow for non-verified users.
             verify_token = generate_verification_token(existing_user)
+            print("[DEBUG] Appel send_verification_email pour EXISTING:", existing_user.email, verify_token.code)
             email_sent = send_verification_email(existing_user, verify_token.token, verify_token.code)
 
             if not email_sent:
@@ -61,7 +62,7 @@ class RegisterUser(graphene.Mutation):
                 user=existing_user,
                 success=True,
                 message='Account already exists but is not verified. A new verification code was sent.',
-                verification_code=verify_token.code if (settings.DEBUG and getattr(settings, 'DEBUG_EMAIL', False)) else None
+                verification_code=verify_token.code  # Toujours retourner le code
             )
         
         # Validate password
@@ -90,6 +91,7 @@ class RegisterUser(graphene.Mutation):
         verify_token = generate_verification_token(user)
         
         # Send verification email with both token and code
+        print("[DEBUG] Appel send_verification_email pour NEW:", user.email, verify_token.code)
         email_sent = send_verification_email(user, verify_token.token, verify_token.code)
         
         if not email_sent:
@@ -104,7 +106,7 @@ class RegisterUser(graphene.Mutation):
             user=user,
             success=True,
             message='User registered successfully! Please check your email to verify your account.',
-            verification_code=verify_token.code if (settings.DEBUG and getattr(settings, 'DEBUG_EMAIL', False)) else None
+            verification_code=verify_token.code  # Toujours retourner le code
         )
 
 
@@ -219,7 +221,7 @@ class ResendVerificationEmail(graphene.Mutation):
                 return ResendVerificationEmail(
                     success=False,
                     message='Please wait 60 seconds before requesting a new code.',
-                    verification_code=latest_token.code if (settings.DEBUG and getattr(settings, 'DEBUG_EMAIL', False)) else None
+                    verification_code=latest_token.code  # Toujours retourner le code
                 )
 
             # Generate new verification token
@@ -234,7 +236,7 @@ class ResendVerificationEmail(graphene.Mutation):
             return ResendVerificationEmail(
                 success=True,
                 message='Verification email sent successfully! Please check your inbox.',
-                verification_code=verify_token.code if (settings.DEBUG and getattr(settings, 'DEBUG_EMAIL', False)) else None
+                verification_code=verify_token.code  # Toujours retourner le code
             )
             
         except User.DoesNotExist:
