@@ -27,19 +27,11 @@ from offer.models import (
     PayoutRequestStatus,
 )
 from graphql import GraphQLError
-from users.utils import check_user_role
+from users.utils import check_user_role, safe_create_notification
 from users.models import Notification, NotificationType
 from users.billing import get_user_quota_snapshot
 
 User = get_user_model()
-
-
-def safe_create_notification(**kwargs):
-    try:
-        Notification.objects.create(**kwargs)
-    except (OperationalError, ProgrammingError):
-        # Do not break core business flows when notification table is unavailable.
-        pass
 
 
 class OfferApplicationType(DjangoObjectType):

@@ -1,0 +1,57 @@
+[
+  {
+    "actor": "INFLUENCER",
+    "question": "How do I create a profile on InfluBridge?",
+    "answer": "To create a profile, sign up as an Influencer, verify your email, and then complete your 'My Profile' section by adding your niche, audience demographics, social media handles, and a compelling bio."
+  },
+  {
+    "actor": "INFLUENCER",
+    "question": "How do I apply for campaigns?",
+    "answer": "Go to the 'Offers' tab in your dashboard, browse available campaigns that match your niche, and click 'Apply'. Be sure to tailor your proposal to the brand's requirements."
+  },
+  {
+    "actor": "INFLUENCER",
+    "question": "When will I get paid for my work?",
+    "answer": "Payments are typically released within 24-48 hours after the brand approves your final content deliverable. InfluBridge uses a secure escrow system to ensure you're paid fairly."
+  },
+  {
+    "actor": "INFLUENCER",
+    "question": "How can I improve my chances of getting selected?",
+    "answer": "Keep your profile up-to-date with your latest social media stats and portfolio examples. Responsive communication and high-quality past collaboration results also significantly help."
+  },
+  {
+    "actor": "COMPANY",
+    "question": "How do I start a new campaign?",
+    "answer": "In your brand dashboard, go to 'Campaigns' and click 'Create New'. You'll need to define your campaign objectives, budget, target audience, and required deliverables."
+  },
+  {
+    "actor": "COMPANY",
+    "question": "How do I find the best influencers for my brand?",
+    "answer": "Use our search and filtering tools to find influencers by category, location, audience size, and engagement rate. You can also review their past performance and portfolios on their profile."
+  },
+  {
+    "actor": "COMPANY",
+    "question": "How does the payment system work?",
+    "answer": "When you approve an influencer's proposal, you fund the campaign budget into InfluBridge's secure escrow. The funds are only released to the influencer once you approve the final content."
+  },
+  {
+    "actor": "COMPANY",
+    "question": "What happens if an influencer doesn't deliver?",
+    "answer": "If an influencer fails to meet the campaign deadlines or requirements, you can open a dispute. Our support team will mediate, and if the work wasn't completed, the escrowed funds can be returned to you."
+  },
+  {
+    "actor": "ADMIN",
+    "question": "How do I verify a new user account?",
+    "answer": "In the admin dashboard, go to 'User Management', find the pending user, review their details and connected social media accounts, and then click 'Verify' to grant them access to the platform."
+  },
+  {
+    "actor": "ADMIN",
+    "question": "How can I monitor platform activity?",
+    "answer": "The admin dashboard provides real-time analytics on new sign-ups, active campaigns, platform revenue, and any pending disputes that require attention."
+  },
+  {
+    "actor": "ADMIN",
+    "question": "What is the process for handling disputes?",
+    "answer": "Admins can view all open disputes in the 'Dispute Center'. Review the communication logs and deliverables provided by both the brand and the influencer, then make a fair determination based on the campaign brief."
+  }
+]

@@ -43,8 +43,8 @@ class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
         user.refresh_from_db()
         
         # Debug logging
-        print(f"🔐 Login attempt for: {user.email}")
-        print(f"📋 Current role from DB: '{user.role}'")
+        print(f"[AUTH] Login attempt for: {user.email}")
+        print(f"[AUTH] Current role from DB: '{user.role}'")
         
         # Check if user is banned
         if user.is_banned:
@@ -61,7 +61,8 @@ class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
         # Check if profile is completed
         if user.is_completed_profile:
             # If profile is complete, check admin verification
-            if not user.is_verify_by_admin:
+            # Exclude ADMINs from this check
+            if not user.is_verify_by_admin and user.role != 'ADMIN' and not user.is_superuser:
                 raise GraphQLError('Your profile is complete but still pending admin verification. Please wait for approval.')
         
         # If all checks pass, call the parent mutate method

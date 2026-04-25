@@ -295,3 +295,9 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 
 # Frontend URL for email verification links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+
+# Stripe Settings
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+STRIPE_CURRENCY = os.getenv('STRIPE_CURRENCY', 'usd')
+STRIPE_SIMULATION_MODE = os.getenv('STRIPE_SIMULATION_MODE', 'False') == 'True'

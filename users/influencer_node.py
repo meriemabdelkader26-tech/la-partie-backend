@@ -3,7 +3,7 @@ from graphene_django import DjangoObjectType
 from graphene import relay
 from .influencer_models import (
     Influencer, ReseauSocial, InfluencerWork, Image,
-    InstagramReel, InstagramPost, InfluencerImage,
+    InstagramReel, InstagramPost,
     PortfolioMedia, OffreCollaboration, StatistiquesGlobales
 )
 from .utils import normalize_role
@@ -134,17 +134,6 @@ class InstagramPostNode(DjangoObjectType):
         interfaces = (graphene.relay.Node,)
 
 
-class InfluencerImageNode(DjangoObjectType):
-    """GraphQL Node for InfluencerImage model (Deprecated)"""
-    
-    class Meta:
-        model = InfluencerImage
-        fields = (
-            'id', 'url', 'is_default', 'created_at'
-        )
-        interfaces = (graphene.relay.Node,)
-
-
 class PortfolioMediaNode(DjangoObjectType):
     """GraphQL Node for PortfolioMedia model"""
     
@@ -226,6 +215,7 @@ class InfluencerNode(DjangoObjectType):
     portfolio_media = graphene.List(PortfolioMediaNode)
     offres_collaboration = graphene.List(OffreCollaborationNode)
     statistiques_globales = graphene.Field(StatistiquesGlobalesType)
+    profile_picture = graphene.String()
     
     class Meta:
         model = Influencer
@@ -233,7 +223,7 @@ class InfluencerNode(DjangoObjectType):
             'id', 'user', 'instagram_username', 'pseudo', 'biography',
             'site_web', 'localisation', 'instagram_data', 'selected_categories',
             'langues', 'centres_interet', 'type_contenu',
-            'disponibilite_collaboration', 'created_at', 'updated_at'
+            'disponibilite_collaboration', 'created_at', 'updated_at', 'profile_picture'
         )
         interfaces = (graphene.relay.Node,)
         connection_class = InfluencerConnection
@@ -274,3 +264,15 @@ class InfluencerNode(DjangoObjectType):
             'engagement_moyen_global': self.engagement_moyen_global,
             'croissance_mensuelle': self.calculate_croissance_mensuelle()
         }
+
+    def resolve_profile_picture(self, info):
+        """Resolve profile picture from images relation"""
+        try:
+            profile_pic = self.images.filter(is_default=True).first()
+            if not profile_pic:
+                profile_pic = self.images.first()
+            if profile_pic:
+                return profile_pic.url
+        except Exception:
+            pass
+        return None

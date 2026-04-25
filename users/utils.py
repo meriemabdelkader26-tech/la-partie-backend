@@ -7,7 +7,21 @@ from django.apps import apps
 from django.utils import timezone
 from graphql_jwt.utils import jwt_payload as default_jwt_payload
 
+from django.db.utils import OperationalError, ProgrammingError
 from .email_service import EmailService
+
+
+def safe_create_notification(**kwargs):
+    """
+    Safely create a notification without breaking the main flow if the database 
+    table is missing or locked.
+    """
+    Notification = apps.get_model('users', 'Notification')
+    try:
+        return Notification.objects.create(**kwargs)
+    except (OperationalError, ProgrammingError):
+        # Do not break core business flows when notification table is unavailable.
+        return None
 
 
 def normalize_role(role):
@@ -59,14 +73,32 @@ def jwt_payload_handler(user, context=None):
     normalized_role = normalize_role(user.role)
     
     # Debug logging
-    print(f"🔑 Generating JWT token for: {user.email}")
-    print(f"📋 Role: {user.role} → Normalized: {normalized_role}")
+    print(f"[AUTH] Generating JWT token for: {user.email}")
+    print(f"[AUTH] Role: {user.role} -> Normalized: {normalized_role}")
     
     # Add custom fields - normalize role to handle corrupted values
     payload['email'] = user.email
     payload['name'] = user.name
     payload['role'] = normalized_role
     payload['userId'] = user.id
+    
+    if hasattr(user, 'influencer_profile'):
+        try:
+            profile_pic = user.influencer_profile.images.filter(is_default=True).first()
+            if not profile_pic:
+                profile_pic = user.influencer_profile.images.first()
+            if profile_pic:
+                payload['profilePicture'] = getattr(profile_pic, 'url', None) or getattr(profile_pic, 'image', None) and getattr(profile_pic.image, 'url', None)
+        except Exception as e:
+            print(f"Error getting profile picture: {e}")
+            
+    if hasattr(user, 'company_profile') and not payload.get('profilePicture'):
+        try:
+            profile_pic = user.company_profile.logo
+            if profile_pic:
+                payload['profilePicture'] = profile_pic.url if hasattr(profile_pic, 'url') else str(profile_pic)
+        except Exception as e:
+            print(f"Error getting company profile picture: {e}")
     
     return payload
 

@@ -42,10 +42,10 @@ class EmailService:
             plain_message = strip_tags(html_message)
             
             # Log attempt
-            logger.info(f"📧 Attempting to send verification email to {user.email}")
-            logger.info(f"📧 Email Host: {settings.EMAIL_HOST}")
-            logger.info(f"📧 Email Port: {settings.EMAIL_PORT}")
-            logger.info(f"📧 From: {settings.DEFAULT_FROM_EMAIL}")
+            logger.info(f"[EMAIL] Attempting to send verification email to {user.email}")
+            logger.info(f"[EMAIL] Email Host: {settings.EMAIL_HOST}")
+            logger.info(f"[EMAIL] Email Port: {settings.EMAIL_PORT}")
+            logger.info(f"[EMAIL] From: {settings.DEFAULT_FROM_EMAIL}")
             
             # Try to send email
             result = send_mail(
@@ -57,22 +57,22 @@ class EmailService:
                 fail_silently=False,  # Let exceptions bubble up
             )
             
-            logger.info(f"✅ Email sent successfully to {user.email}")
+            logger.info(f"[SUCCESS] Email sent successfully to {user.email}")
             return True, "Email sent successfully"
             
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"❌ Error sending verification email to {user.email}: {error_msg}")
-            logger.error(f"📋 Exception type: {type(e).__name__}")
+            logger.error(f"[ERROR] Error sending verification email to {user.email}: {error_msg}")
+            logger.error(f"[ERROR] Exception type: {type(e).__name__}")
             
             # Log the full traceback for debugging
             import traceback
-            logger.error(f"📋 Traceback: {traceback.format_exc()}")
+            logger.error(f"[ERROR] Traceback: {traceback.format_exc()}")
             
             # In development mode, save email to console backend
             if settings.DEBUG and os.getenv('DEBUG_EMAIL', 'False') == 'True':
-                logger.warning(f"⚠️ DEBUG MODE: Email would have been sent to {user.email}")
-                logger.warning(f"⚠️ Code: {code}")
+                logger.warning(f"[WARNING] DEBUG MODE: Email would have been sent to {user.email}")
+                logger.warning(f"[WARNING] Code: {code}")
                 return True, "Email logged to console (DEBUG mode)"
             
             return False, f"Failed to send email: {error_msg}"
@@ -101,7 +101,7 @@ class EmailService:
             
             plain_message = strip_tags(html_message)
             
-            logger.info(f"📧 Sending password reset email to {user.email}")
+            logger.info(f"[EMAIL] Sending password reset email to {user.email}")
             
             send_mail(
                 subject='Reset Your Password - InfluBridge',
@@ -112,12 +112,12 @@ class EmailService:
                 fail_silently=False,
             )
             
-            logger.info(f"✅ Password reset email sent to {user.email}")
+            logger.info(f"[SUCCESS] Password reset email sent to {user.email}")
             return True, "Email sent successfully"
             
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"❌ Error sending password reset email: {error_msg}")
+            logger.error(f"[ERROR] Error sending password reset email: {error_msg}")
             
             if settings.DEBUG and os.getenv('DEBUG_EMAIL', 'False') == 'True':
                 print(f"[DEBUG] Tentative d'envoi d'email de vérification à {user.email} avec code {code}")
@@ -129,27 +129,27 @@ class EmailService:
 def diagnose_email_config():
     """Diagnose email configuration issues"""
     print("\n" + "="*60)
-    print("📧 EMAIL CONFIGURATION DIAGNOSTIC REPORT")
+    print("[DIAGNOSTIC] EMAIL CONFIGURATION DIAGNOSTIC REPORT")
     print("="*60)
     
-    print(f"✓ EMAIL_BACKEND: {settings.EMAIL_BACKEND}")
-    print(f"✓ EMAIL_HOST: {settings.EMAIL_HOST}")
-    print(f"✓ EMAIL_PORT: {settings.EMAIL_PORT}")
-    print(f"✓ EMAIL_USE_TLS: {settings.EMAIL_USE_TLS}")
-    print(f"✓ EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
-    print(f"✓ DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
-    print(f"✓ DEBUG: {settings.DEBUG}")
-    print(f"✓ DEBUG_EMAIL: {os.getenv('DEBUG_EMAIL', 'Not set')}")
+    print(f"v EMAIL_BACKEND: {settings.EMAIL_BACKEND}")
+    print(f"v EMAIL_HOST: {settings.EMAIL_HOST}")
+    print(f"v EMAIL_PORT: {settings.EMAIL_PORT}")
+    print(f"v EMAIL_USE_TLS: {settings.EMAIL_USE_TLS}")
+    print(f"v EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
+    print(f"v DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
+    print(f"v DEBUG: {settings.DEBUG}")
+    print(f"v DEBUG_EMAIL: {os.getenv('DEBUG_EMAIL', 'Not set')}")
     
     # Test connection
-    print("\n🔌 Testing SMTP Connection...")
+    print("\n[TEST] Testing SMTP Connection...")
     try:
         from django.core.mail import get_connection
         connection = get_connection()
         connection.open()
         connection.close()
-        print("✅ SMTP connection successful!")
+        print("[SUCCESS] SMTP connection successful!")
     except Exception as e:
-        print(f"❌ SMTP connection failed: {e}")
+        print(f"[ERROR] SMTP connection failed: {e}")
     
     print("="*60 + "\n")

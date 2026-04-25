@@ -4,11 +4,13 @@ from .offer_list import OfferListQuery
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from django.utils import timezone
+from django.db.models import Sum, Q
 
 from offer.models import (
     Offer,
     OfferApplication,
     ApplicationStatus,
+    PaymentStatus,
     InfluencerPaymentMethod,
     PayoutRequest,
 )
@@ -35,6 +37,7 @@ class DashboardUserType(graphene.ObjectType):
 class DashboardApplicationOfferType(graphene.ObjectType):
     id = graphene.ID()
     title = graphene.String()
+    created_by = graphene.Field(DashboardUserType)
 
 
 class DashboardApplicationType(graphene.ObjectType):
@@ -56,6 +59,18 @@ class CompanyDashboardStatsType(graphene.ObjectType):
     rejected_applications = graphene.Int()
     recent_offers = graphene.List(DashboardOfferType)
     recent_applications = graphene.List(DashboardApplicationType)
+
+
+class InfluencerDashboardStatsType(graphene.ObjectType):
+    total_campaigns = graphene.Int()
+    active_campaigns = graphene.Int()
+    total_earnings = graphene.Float()
+    pending_earnings = graphene.Float()
+    available_balance = graphene.Float()
+    total_reach = graphene.Int()
+    avg_engagement = graphene.Float()
+    recent_applications = graphene.List(DashboardApplicationType)
+    monthly_earnings = graphene.JSONString()
 
 
 class InfluencerPaymentMethodType(graphene.ObjectType):
@@ -83,6 +98,10 @@ class OfferQueries(OfferSingleQuery, OfferListQuery):
     company_dashboard_stats = graphene.Field(
         CompanyDashboardStatsType,
         description="Get dashboard statistics for the authenticated company"
+    )
+    influencer_dashboard_stats = graphene.Field(
+        InfluencerDashboardStatsType,
+        description="Get dashboard statistics for the authenticated influencer"
     )
     my_payment_methods = graphene.List(
         InfluencerPaymentMethodType,
@@ -126,6 +145,11 @@ class OfferQueries(OfferSingleQuery, OfferListQuery):
                 offer=DashboardApplicationOfferType(
                     id=str(app.offer.id),
                     title=app.offer.title,
+                    created_by=DashboardUserType(
+                        id=str(app.offer.created_by.id),
+                        name=app.offer.created_by.name,
+                        email=app.offer.created_by.email,
+                    ),
                 ),
                 user=DashboardUserType(
                     id=str(app.user.id),
@@ -137,7 +161,7 @@ class OfferQueries(OfferSingleQuery, OfferListQuery):
                 asking_price=float(app.asking_price),
                 submitted_at=app.submitted_at,
             )
-            for app in applications_qs.select_related("offer", "user").order_by("-submitted_at")[:5]
+            for app in applications_qs.select_related("offer", "user", "offer__created_by").order_by("-submitted_at")[:5]
         ]
 
         return CompanyDashboardStatsType(
@@ -149,6 +173,144 @@ class OfferQueries(OfferSingleQuery, OfferListQuery):
             rejected_applications=applications_qs.filter(status=ApplicationStatus.REJECTED).count(),
             recent_offers=recent_offers,
             recent_applications=recent_applications,
+        )
+
+    @login_required
+    def resolve_influencer_dashboard_stats(self, info, **kwargs):
+        user = info.context.user
+
+        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_superuser):
+            raise GraphQLError("This query is only available for influencer accounts")
+
+        from users.influencer_models import Influencer
+        try:
+            influencer = Influencer.objects.prefetch_related(
+                'reseaux_sociaux',
+                'instagram_posts',
+                'instagram_reels'
+            ).get(user=user)
+        except Influencer.DoesNotExist:
+            return InfluencerDashboardStatsType(
+                total_campaigns=0,
+                active_campaigns=0,
+                total_earnings=0.0,
+                pending_earnings=0.0,
+                available_balance=0.0,
+                total_reach=0,
+                avg_engagement=0.0,
+                recent_applications=[],
+                monthly_earnings='[]'
+            )
+
+        applications_qs = OfferApplication.objects.filter(user=user)
+        
+        # Earnings calculation
+        released_total = float(
+            applications_qs.filter(
+                Q(payment_status=PaymentStatus.RELEASED)
+                | Q(payment_status__iexact='released')
+                | Q(payment_status__icontains='released')
+            ).aggregate(total=Sum('asking_price'))['total']
+            or 0
+        )
+
+        pending_total = float(
+            applications_qs.filter(
+                status=ApplicationStatus.APPROVED
+            ).exclude(
+                Q(payment_status=PaymentStatus.RELEASED)
+                | Q(payment_status__iexact='released')
+                | Q(payment_status__icontains='released')
+            ).aggregate(total=Sum('asking_price'))['total']
+            or 0
+        )
+
+        # Reserved (already requested or paid out)
+        from offer.models import PayoutRequestStatus
+        reserved_total = float(
+            PayoutRequest.objects.filter(
+                user=user,
+                status__in=[
+                    PayoutRequestStatus.PENDING,
+                    PayoutRequestStatus.APPROVED,
+                    PayoutRequestStatus.PAID,
+                ],
+            ).aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
+
+        available_balance = max(0.0, released_total - reserved_total)
+        total_earnings = released_total + pending_total
+
+        # Monthly earnings (for the chart)
+        import datetime
+        from django.db.models.functions import TruncMonth
+        import json
+        
+        monthly_data = (
+            applications_qs.filter(
+                Q(payment_status=PaymentStatus.RELEASED)
+                | Q(payment_status=PaymentStatus.IN_ESCROW)
+                | Q(status=ApplicationStatus.APPROVED)
+            )
+            .annotate(month=TruncMonth('submitted_at'))
+            .values('month')
+            .annotate(total=Sum('asking_price'))
+            .order_by('month')
+        )
+        
+        monthly_earnings_list = []
+        for entry in monthly_data:
+            if entry['month']:
+                monthly_earnings_list.append({
+                    "month": entry['month'].strftime('%B'),
+                    "amount": float(entry['total'])
+                })
+        
+        # Reach and Engagement
+        social_networks = list(influencer.reseaux_sociaux.all())
+        total_reach = int(sum((rs.nombre_abonnes or 0) for rs in social_networks))
+        
+        avg_engagement = 0.0
+        if social_networks:
+            avg_engagement = float(sum((rs.taux_engagement or 0.0) for rs in social_networks) / len(social_networks))
+
+        # Recent Applications
+        recent_applications = [
+            DashboardApplicationType(
+                id=str(app.id),
+                offer=DashboardApplicationOfferType(
+                    id=str(app.offer.id),
+                    title=app.offer.title,
+                    created_by=DashboardUserType(
+                        id=str(app.offer.created_by.id),
+                        name=app.offer.created_by.name,
+                        email=app.offer.created_by.email,
+                    ),
+                ),
+                user=DashboardUserType(
+                    id=str(app.user.id),
+                    name=app.user.name,
+                    email=app.user.email,
+                ),
+                status=app.status,
+                payment_status=app.payment_status,
+                asking_price=float(app.asking_price),
+                submitted_at=app.submitted_at,
+            )
+            for app in applications_qs.select_related("offer", "user", "offer__created_by").order_by("-submitted_at")[:10]
+        ]
+
+        return InfluencerDashboardStatsType(
+            total_campaigns=applications_qs.count(),
+            active_campaigns=applications_qs.filter(status=ApplicationStatus.APPROVED).count(),
+            total_earnings=total_earnings,
+            pending_earnings=pending_total,
+            available_balance=available_balance,
+            total_reach=total_reach,
+            avg_engagement=avg_engagement,
+            recent_applications=recent_applications,
+            monthly_earnings=monthly_earnings_list
         )
 
     @login_required

@@ -304,7 +304,7 @@ def evaluate_models(models, df, X, n_tests=10):
     results = {}
     
     for model_name, model in models.items():
-        print(f"\n🔍 Évaluation de: {model_name}")
+        print(f"\n[EVAL] Evaluation de: {model_name}")
         
         metrics = {
             'diversity_scores': [],
@@ -529,7 +529,7 @@ def visualize_comparison(results, df, models):
 def save_best_model_corrected(results, models):
     """Sauvegarde le meilleur modèle - VERSION CORRIGÉE qui ignore le bug"""
     print("\n" + "="*60)
-    print("🏆 SÉLECTION DU MEILLEUR MODÈLE (CORRIGÉE)")
+    print("[SUCCESS] SELECTION DU MEILLEUR MODELE (CORRIGEE)")
     print("="*60)
     
     print("⚠️  CORRECTION: Content-Based Filtering a un bug de diversité (7.227)")
@@ -592,7 +592,7 @@ def save_best_model_corrected(results, models):
         print(f"    Nouveau meilleur modèle: {best_model_name}")
     
    
-    print(f"\n💾 Sauvegarde du modèle: {best_model_name}")
+    print(f"\n[SAVE] Sauvegarde du modele: {best_model_name}")
     
     os.makedirs('models', exist_ok=True)
     

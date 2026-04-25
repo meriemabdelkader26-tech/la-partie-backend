@@ -1,49 +1,74 @@
 import graphene
 from datetime import timedelta
 from django.utils import timezone
-from users.models import User
-from offer.models import Offer, OfferApplication
+from django.db.models import Count, Sum, Q
+from django.db.models.functions import TruncMonth
+from users.models import User, UserRole
+from offer.models import Offer, OfferApplication, ApplicationStatus, PaymentStatus
 
-class SessionsTrendMediumType(graphene.ObjectType):
+class ChartDataPointType(graphene.ObjectType):
     label = graphene.String()
-    data = graphene.List(graphene.Int)
-
-class NewVsReturningType(graphene.ObjectType):
-    new = graphene.Int()
-    returning = graphene.Int()
+    value = graphene.Float()
 
 class AdminDashboardStatsType(graphene.ObjectType):
-    total_sessions = graphene.Int()
-    sessions_trend_by_medium = graphene.List(SessionsTrendMediumType)
-    pages_per_visit = graphene.Float()
-    unique_visitors = graphene.Int()
-    new_vs_returning = graphene.Field(NewVsReturningType)
-    gender_breakdown = graphene.JSONString()
+    total_revenue = graphene.Float()
+    revenue_trend = graphene.List(ChartDataPointType)
+    applications_status_dist = graphene.List(ChartDataPointType)
+    users_role_dist = graphene.List(ChartDataPointType)
+    offers_growth = graphene.List(ChartDataPointType)
 
 class AdminDashboardQueries(graphene.ObjectType):
     admin_dashboard_stats = graphene.Field(AdminDashboardStatsType)
 
     def resolve_admin_dashboard_stats(self, info):
         now = timezone.now()
-        # Simule 12 mois
-        months = [now - timedelta(days=30*i) for i in range(12)][::-1]
-        # Sessions = users actifs (à adapter si tu as un modèle Session)
-        total_sessions = User.objects.count()
-        unique_visitors = User.objects.values('email').distinct().count()
-        pages_per_visit = 1.76  # À calculer si tu as les logs
-        sessions_trend_by_medium = [
-            SessionsTrendMediumType(label="Direct", data=[100, 120, 90, 150, 200, 180, 160, 170, 140, 130, 120, 110]),
-            SessionsTrendMediumType(label="Google", data=[80, 90, 70, 100, 120, 110, 100, 105, 95, 90, 85, 80]),
-            SessionsTrendMediumType(label="Facebook", data=[60, 70, 50, 80, 100, 90, 80, 85, 75, 70, 65, 60]),
+        six_months_ago = now - timedelta(days=180)
+
+        # 1. Total Revenue (Released or In Escrow payments)
+        total_revenue_query = OfferApplication.objects.filter(
+            payment_status__in=[PaymentStatus.RELEASED, PaymentStatus.IN_ESCROW]
+        ).aggregate(total=Sum('asking_price'))
+        total_revenue = float(total_revenue_query['total'] or 0.0)
+
+        # 2. Revenue Trend (Last 6 months)
+        revenue_trend_raw = OfferApplication.objects.filter(
+            payment_status__in=[PaymentStatus.RELEASED, PaymentStatus.IN_ESCROW],
+            submitted_at__gte=six_months_ago
+        ).annotate(month=TruncMonth('submitted_at')).values('month').annotate(total=Sum('asking_price')).order_by('month')
+
+        revenue_trend = [
+            ChartDataPointType(label=item['month'].strftime('%b %Y'), value=float(item['total'] or 0.0))
+            for item in revenue_trend_raw
         ]
-        new = User.objects.filter(created_at__gte=now - timedelta(days=30)).count()
-        returning = unique_visitors - new
-        gender_breakdown = {"Homme": 52.8, "Femme": 47.2}
+
+        # 3. Applications Status Distribution
+        app_status_raw = OfferApplication.objects.values('status').annotate(count=Count('id'))
+        applications_status_dist = [
+            ChartDataPointType(label=item['status'], value=float(item['count']))
+            for item in app_status_raw
+        ]
+
+        # 4. Users Role Distribution
+        user_role_raw = User.objects.values('role').annotate(count=Count('id'))
+        users_role_dist = [
+            ChartDataPointType(label=item['role'], value=float(item['count']))
+            for item in user_role_raw
+        ]
+
+        # 5. Offers Growth (New offers per month)
+        offers_growth_raw = Offer.objects.filter(
+            created_at__gte=six_months_ago
+        ).annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id')).order_by('month')
+
+        offers_growth = [
+            ChartDataPointType(label=item['month'].strftime('%b %Y'), value=float(item['count']))
+            for item in offers_growth_raw
+        ]
+
         return AdminDashboardStatsType(
-            total_sessions=total_sessions,
-            sessions_trend_by_medium=sessions_trend_by_medium,
-            pages_per_visit=pages_per_visit,
-            unique_visitors=unique_visitors,
-            new_vs_returning=NewVsReturningType(new=new, returning=returning),
-            gender_breakdown=gender_breakdown,
+            total_revenue=total_revenue,
+            revenue_trend=revenue_trend,
+            applications_status_dist=applications_status_dist,
+            users_role_dist=users_role_dist,
+            offers_growth=offers_growth
         )

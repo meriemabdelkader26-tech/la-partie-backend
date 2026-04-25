@@ -23,6 +23,7 @@ pandas
 promise==2.3
 psycopg2-binary==2.9.10
 PyJWT==2.10.1
+requests==2.32.3
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 scikit-learn
@@ -34,3 +35,5 @@ time-stamped-model==0.2.11
 typing_extensions==4.13.2
 tzdata==2025.2
 whitenoise==6.6.0
+langchain
+langchain-google-genai

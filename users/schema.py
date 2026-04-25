@@ -40,11 +40,14 @@ class Query(UserQueries, InfluencerQueries, CompanyQueries, MessagesQueries, Off
 
 
 
+from .mutations.chatbot_mutations import AskChatbot
+
 class Mutation(UserMutations, AuthMutations, InfluencerMutations, CompanyMutations, MessagesMutations, OfferMutations, graphene.ObjectType):
 
     """Users app mutations"""
 
     register_user = UserMutations.register_user
+    ask_chatbot = AskChatbot.Field()
 
 
 

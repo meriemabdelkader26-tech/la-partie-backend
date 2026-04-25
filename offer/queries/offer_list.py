@@ -5,7 +5,7 @@ from graphql_jwt.decorators import login_required
 
 from offer.filters.Offer_Filter import OfferFilter
 from offer.types.Offer_Node import OfferNode
-from offer.models import Offer
+from offer.models import Offer, SavedOffer
 
 
 class OfferListQuery(graphene.ObjectType):
@@ -24,7 +24,17 @@ class OfferListQuery(graphene.ObjectType):
         description="Get offers created by the authenticated user"
     )
 
-    offer = graphene.relay.Node.Field(OfferNode)
+    saved_offers = DjangoFilterConnectionField(
+        OfferNode,
+        filterset_class=OfferFilter,
+        description="Get offers saved by the authenticated user"
+    )
+    
+    @login_required
+    def resolve_saved_offers(self, info, **kwargs):
+        """Get offers saved by the current authenticated user"""
+        user = info.context.user
+        return Offer.objects.filter(saved_by_users__user=user).prefetch_related('applications', 'applications__user')
     
     @login_required
     def resolve_my_offers(self, info, **kwargs):

@@ -27,6 +27,7 @@ class PayoutRequestStatus(models.TextChoices):
 class PaymentMethodType(models.TextChoices):
     PAYPAL = 'PayPal', 'PayPal'
     BANK_TRANSFER = 'BankTransfer', 'Bank Transfer'
+    STRIPE = 'Stripe', 'Stripe'
 
 
 
@@ -124,6 +125,28 @@ class OfferApplication(models.Model):
     @property
     def is_rejected(self):
         return self.status == ApplicationStatus.REJECTED
+
+
+class SavedOffer(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='saved_offers'
+    )
+    offer = models.ForeignKey(
+        Offer,
+        on_delete=models.CASCADE,
+        related_name='saved_by_users'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'offer_savedoffer'
+        unique_together = ('user', 'offer')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} saved {self.offer.title}"
 
 
 class InfluencerPaymentMethod(models.Model):

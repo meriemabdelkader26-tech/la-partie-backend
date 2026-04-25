@@ -10,7 +10,14 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from ..user_node import UserNode, UserRoleEnum
-from ..utils import generate_verification_token, send_verification_email, verify_email_token, verify_email_code
+from ..utils import (
+    generate_verification_token, 
+    send_verification_email, 
+    verify_email_token, 
+    verify_email_code,
+    safe_create_notification
+)
+from users.models import NotificationType
 
 User = get_user_model()
 
@@ -69,14 +76,30 @@ class RegisterUser(graphene.Mutation):
         if len(password) < 8:
             raise GraphQLError('Password must be at least 8 characters long')
         
+        # Ensure role is a string value, not an Enum object
+        role_value = role.value if hasattr(role, 'value') else str(role)
+        if 'EnumMeta.' in role_value:
+            role_value = role_value.split('.')[-1]
+            
         # Create user (email_verified will be False by default)
         user = User.objects.create_user(
             email=email,
             password=password,
             name=name,
-            role=role,
+            role=role_value,
             phone_number=phone_number
         )
+
+        # Notify admins about the new user registration
+        admin_users = User.objects.filter(role='ADMIN') | User.objects.filter(is_staff=True)
+        for admin in admin_users.distinct():
+            safe_create_notification(
+                user=admin,
+                notification_type=NotificationType.SYSTEM,
+                title="New User Registered",
+                message=f"A new {role_value.lower()} ({name}) has registered.",
+                link=f"/admin/user"
+            )
 
         if not verification_required:
             user.verify_email()
@@ -270,6 +293,18 @@ class UpdateUser(graphene.Mutation):
         if not current_user.is_authenticated:
             raise GraphQLError('Authentication required')
         
+        # Decode global ID
+        try:
+            print(f"DEBUG: UPDATE_USER raw user_id = {user_id}")
+            node_type, pk = from_global_id(user_id)
+            print(f"DEBUG: from_global_id -> type: {node_type}, pk: {pk}")
+            if node_type == 'UserNode':
+                user_id = pk
+            print(f"DEBUG: final user_id = {user_id}")
+        except Exception as e:
+            print(f"DEBUG: from_global_id exception: {e}")
+            pass # Use user_id as is if it's not a valid global ID
+
         try:
             user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
@@ -299,7 +334,11 @@ class UpdateUser(graphene.Mutation):
                 else:
                     user.unban_user()
             if 'role' in kwargs:
-                user.role = kwargs['role']
+                role_val = kwargs['role']
+                role_val = role_val.value if hasattr(role_val, 'value') else str(role_val)
+                if 'EnumMeta.' in role_val:
+                    role_val = role_val.split('.')[-1]
+                user.role = role_val
         
         user.save()
         

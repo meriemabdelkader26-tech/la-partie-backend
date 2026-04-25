@@ -385,31 +385,6 @@ class InstagramPost(models.Model):
         return f"{self.username} - {self.post_name[:50]}"
 
 
-class InfluencerImage(models.Model):
-    """DEPRECATED: Use Image model instead. Kept for backward compatibility."""
-    
-    influencer = models.ForeignKey(
-        Influencer,
-        on_delete=models.CASCADE,
-        related_name='old_images'
-    )
-    
-    url = models.URLField(max_length=1000)
-    is_default = models.BooleanField(default=False)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        db_table = 'influencer_images'
-        verbose_name = 'Influencer Image (Deprecated)'
-        verbose_name_plural = 'Influencer Images (Deprecated)'
-        ordering = ['-is_default', '-created_at']
-    
-    def __str__(self):
-        default_text = " (Default)" if self.is_default else ""
-        return f"{self.influencer.user.name} - Image{default_text}"
-
-
 class PortfolioMedia(models.Model):
     """Portfolio media items for influencer"""
     

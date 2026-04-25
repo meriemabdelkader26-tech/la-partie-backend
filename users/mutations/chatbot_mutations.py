@@ -1,7 +1,5 @@
 import graphene
 from graphql import GraphQLError
-from graphql_jwt.decorators import login_required
-
 from ..chatbot_service import generate_chatbot_reply
 
 
@@ -18,10 +16,18 @@ class AskChatbot(graphene.Mutation):
         question = graphene.String(required=True)
         role = graphene.String(required=False)
 
-    @login_required
-    def mutate(self, info, question, role=None):
+    @classmethod
+    def mutate(cls, root, info, question, role=None):
         user = info.context.user
-        effective_role = (role or user.role or "").upper()
+        
+        # Handle anonymous users or users without a role
+        user_role = None
+        if user and user.is_authenticated:
+            user_role = getattr(user, 'role', None)
+            
+        # Prioritize the provided role argument, then the user's saved role, 
+        # then default to INFLUENCER if unauthenticated.
+        effective_role = (role or user_role or "INFLUENCER").upper()
 
         if effective_role not in {"COMPANY", "INFLUENCER", "ADMIN"}:
             raise GraphQLError("Invalid role for chatbot.")

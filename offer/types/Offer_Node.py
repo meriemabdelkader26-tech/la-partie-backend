@@ -25,6 +25,9 @@ class OfferNode(DjangoObjectType):
     applications_count = graphene.Int()
     pending_applications_count = graphene.Int()
     approved_applications_count = graphene.Int()
+    is_applied = graphene.Boolean()
+    application_status = graphene.String()
+    is_saved = graphene.Boolean()
 
     class Meta:
         model = Offer
@@ -47,3 +50,25 @@ class OfferNode(DjangoObjectType):
     def resolve_approved_applications_count(self, info):
         """Get count of approved applications"""
         return self.applications.filter(status='Approved').count()
+
+    def resolve_is_applied(self, info):
+        """Check if the current user has applied to this offer"""
+        user = info.context.user
+        if not user.is_authenticated:
+            return False
+        return self.applications.filter(user=user).exists()
+
+    def resolve_application_status(self, info):
+        """Get the status of the current user's application to this offer"""
+        user = info.context.user
+        if not user.is_authenticated:
+            return None
+        application = self.applications.filter(user=user).first()
+        return application.status if application else None
+
+    def resolve_is_saved(self, info):
+        """Check if the current user has saved this offer"""
+        user = info.context.user
+        if not user.is_authenticated:
+            return False
+        return self.saved_by_users.filter(user=user).exists()

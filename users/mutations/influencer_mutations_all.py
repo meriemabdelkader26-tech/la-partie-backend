@@ -170,17 +170,17 @@ class CompleteInfluencerProfile(graphene.Mutation):
         
         # Debug: Check what's in the request context
         print(f"\n{'='*80}")
-        print(f"🔍 DEBUG: CompleteInfluencerProfile mutation called")
+        print(f"[DEBUG] CompleteInfluencerProfile mutation called")
         print(f"{'='*80}")
-        print(f"📋 User from context: {user.name} ({user.email})")
-        print(f"🆔 User ID: {user.id}")
-        print(f"👤 Role: '{user.role}' (type: {type(user.role)})")
+        print(f"[INFO] User from context: {user.name} ({user.email})")
+        print(f"[INFO] User ID: {user.id}")
+        print(f"[INFO] Role: '{user.role}' (type: {type(user.role)})")
         
         # Check if there's token info in the request
         request = info.context
         if hasattr(request, 'META'):
             auth_header = request.META.get('HTTP_AUTHORIZATION', 'No auth header')
-            print(f"🔑 Auth Header: {auth_header[:50]}..." if len(auth_header) > 50 else f"🔑 Auth Header: {auth_header}")
+            print(f"[AUTH] Auth Header: {auth_header[:50]}..." if len(auth_header) > 50 else f"[AUTH] Auth Header: {auth_header}")
         print(f"{'='*80}\n")
         
         if not check_user_role(user, 'INFLUENCER'):
@@ -292,7 +292,11 @@ class CompleteInfluencerProfile(graphene.Mutation):
             influencer.instagram_reels.all().delete()
             for reel_data in kwargs['selected_reels']:
                 try:
-                    taken_at = datetime.fromisoformat(reel_data['taken_at'].replace('Z', '+00:00'))
+                    # Check if taken_at is a timestamp (numeric)
+                    if reel_data['taken_at'].isdigit():
+                        taken_at = datetime.fromtimestamp(int(reel_data['taken_at']))
+                    else:
+                        taken_at = datetime.fromisoformat(reel_data['taken_at'].replace('Z', '+00:00'))
                 except (ValueError, AttributeError):
                     taken_at = datetime.now()
                 
@@ -322,7 +326,11 @@ class CompleteInfluencerProfile(graphene.Mutation):
             influencer.instagram_posts.all().delete()
             for post_data in kwargs['selected_posts']:
                 try:
-                    taken_at = datetime.fromisoformat(post_data['taken_at'].replace('Z', '+00:00'))
+                    # Check if taken_at is a timestamp (numeric)
+                    if post_data['taken_at'].isdigit():
+                        taken_at = datetime.fromtimestamp(int(post_data['taken_at']))
+                    else:
+                        taken_at = datetime.fromisoformat(post_data['taken_at'].replace('Z', '+00:00'))
                 except (ValueError, AttributeError):
                     taken_at = datetime.now()
                 
