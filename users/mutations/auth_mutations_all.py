@@ -59,11 +59,12 @@ class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
             raise GraphQLError('Please verify your email address before logging in.')
         
         # Check if profile is completed
-        if user.is_completed_profile:
-            # If profile is complete, check admin verification
-            # Exclude ADMINs from this check
-            if not user.is_verify_by_admin and user.role != 'ADMIN' and not user.is_superuser:
-                raise GraphQLError('Your profile is complete but still pending admin verification. Please wait for approval.')
+        # Removed restriction here to allow frontend to show "Pending Approval" screen
+        # if user.is_completed_profile:
+        #     # If profile is complete, check admin verification
+        #     # Exclude ADMINs from this check
+        #     if not user.is_verify_by_admin and user.role != 'ADMIN' and not user.is_superuser:
+        #         raise GraphQLError('Your profile is complete but still pending admin verification. Please wait for approval.')
         
         # If all checks pass, call the parent mutate method
         return super().mutate(root, info, **kwargs)
