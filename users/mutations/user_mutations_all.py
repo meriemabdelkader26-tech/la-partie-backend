@@ -3,6 +3,9 @@ Consolidated User Mutations
 All user-related operations including registration, verification, updates, and admin actions
 """
 import graphene
+import graphql_jwt
+from graphql_jwt.shortcuts import get_token
+from graphql_jwt.refresh_token.models import RefreshToken as RefreshTokenModel
 from graphql import GraphQLError
 from graphql_relay import from_global_id
 from django.contrib.auth import get_user_model
@@ -138,6 +141,8 @@ class VerifyEmailWithToken(graphene.Mutation):
     user = graphene.Field(UserNode)
     success = graphene.Boolean()
     message = graphene.String()
+    token = graphene.String()
+    refresh_token = graphene.String()
     
     class Arguments:
         token = graphene.String(required=True)
@@ -151,10 +156,24 @@ class VerifyEmailWithToken(graphene.Mutation):
                 raise GraphQLError('User not found.')
             if not user.email_verified:
                 user.verify_email()
+            
+            # Generate tokens for automatic login
+            try:
+                jwt_token = get_token(user)
+                refresh_token_obj = RefreshTokenModel.objects.create(user=user)
+                refresh_token_str = refresh_token_obj.token
+                print(f"[AUTH] Successfully generated tokens (token verification disabled): {user.email}")
+            except Exception as e:
+                print(f"[AUTH] Error generating tokens (token verification disabled): {str(e)}")
+                jwt_token = None
+                refresh_token_str = None
+            
             return VerifyEmailWithToken(
                 user=user,
                 success=True,
-                message='Email verification is disabled. Account is already verified.'
+                message='Email verification is disabled. Account is already verified.',
+                token=jwt_token,
+                refresh_token=refresh_token_str
             )
 
         # Verify the token
@@ -163,11 +182,22 @@ class VerifyEmailWithToken(graphene.Mutation):
         if not success:
             raise GraphQLError(message)
         
-        return VerifyEmailWithToken(
-            user=user,
-            success=True,
-            message=message
-        )
+        # Generate tokens for automatic login
+        try:
+            jwt_token = get_token(user)
+            refresh_token_obj = create_refresh_token(user)
+            # Refresh token is an object, we need the token string
+            refresh_token_str = getattr(refresh_token_obj, 'token', str(refresh_token_obj))
+            print(f"[AUTH] Successfully generated tokens (token verification): {user.email}")
+        except Exception as e:
+            print(f"[AUTH] Error generating tokens (token verification): {str(e)}")
+            return VerifyEmailWithToken(
+                user=user,
+                success=True,
+                message=f"{message} (Note: Automatic login failed, please log in manually.)",
+                token=None,
+                refresh_token=None
+            )
 
 
 class VerifyEmailWithCode(graphene.Mutation):
@@ -175,6 +205,8 @@ class VerifyEmailWithCode(graphene.Mutation):
     user = graphene.Field(UserNode)
     success = graphene.Boolean()
     message = graphene.String()
+    token = graphene.String()
+    refresh_token = graphene.String()
     
     class Arguments:
         code = graphene.String(required=True)
@@ -188,10 +220,24 @@ class VerifyEmailWithCode(graphene.Mutation):
                 raise GraphQLError('User not found.')
             if not user.email_verified:
                 user.verify_email()
+            
+            # Generate tokens for automatic login
+            try:
+                jwt_token = get_token(user)
+                refresh_token_obj = create_refresh_token(user)
+                refresh_token_str = getattr(refresh_token_obj, 'token', str(refresh_token_obj))
+                print(f"[AUTH] Successfully generated tokens (no-verif) for: {user.email}")
+            except Exception as e:
+                print(f"[AUTH] Error generating tokens (verification disabled): {str(e)}")
+                jwt_token = None
+                refresh_token_str = None
+            
             return VerifyEmailWithCode(
                 user=user,
                 success=True,
-                message='Email verification is disabled. Account is already verified.'
+                message='Email verification is disabled. Account is already verified.',
+                token=jwt_token,
+                refresh_token=refresh_token_str
             )
 
         # Validate code format
@@ -204,10 +250,32 @@ class VerifyEmailWithCode(graphene.Mutation):
         if not success:
             raise GraphQLError(message)
         
+        # Generate tokens for automatic login
+        try:
+            jwt_token = get_token(user)
+            refresh_token_obj = RefreshTokenModel.objects.create(user=user)
+            refresh_token_str = refresh_token_obj.token
+            print(f"[AUTH] Successfully generated tokens for: {user.email}")
+            print(f"[AUTH] Token len: {len(jwt_token) if jwt_token else 0}, Refresh len: {len(refresh_token_str) if refresh_token_str else 0}")
+        except Exception as e:
+            print(f"[AUTH] Error generating tokens: {str(e)}")
+            # Even if token generation fails, verification was successful
+            # We return success but without tokens, so user has to log in manually
+            return VerifyEmailWithCode(
+                user=user,
+                success=True,
+                message=f"{message} (Note: Automatic login failed, please log in manually.)",
+                token=None,
+                refresh_token=None
+            )
+        
+        print(f"[AUTH] Returning VerifyEmailWithCode success for: {user.email}")
         return VerifyEmailWithCode(
             user=user,
             success=True,
-            message=message
+            message=message,
+            token=jwt_token,
+            refresh_token=refresh_token_str
         )
 
 

@@ -81,6 +81,9 @@ def jwt_payload_handler(user, context=None):
     payload['name'] = user.name
     payload['role'] = normalized_role
     payload['userId'] = user.id
+    payload['isVerifyByAdmin'] = user.is_verify_by_admin
+    payload['isCompletedProfile'] = user.is_completed_profile
+    payload['isStaff'] = user.is_staff
     
     if hasattr(user, 'influencer_profile'):
         try:
