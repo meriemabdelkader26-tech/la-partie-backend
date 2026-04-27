@@ -1,10 +1,22 @@
 from django_filters import FilterSet, OrderingFilter, CharFilter, BooleanFilter, DateTimeFilter
+from django.db.models import Q
 from ..models import User
 
 
 class UserFilter(FilterSet):
     """Filters for searching and filtering users in GraphQL queries"""
     
+    search = CharFilter(method='filter_search', label='Search name or email')
+
+    def filter_search(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value) | 
+            Q(email__icontains=value) |
+            Q(phone_number__icontains=value)
+        )
+
     class Meta:
         model = User
         fields = {

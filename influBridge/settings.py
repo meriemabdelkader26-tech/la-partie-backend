@@ -217,6 +217,7 @@ GRAPHENE = {
     'MIDDLEWARE': [
         'users.middleware.NormalizeAuthorizationHeaderMiddleware',
         'graphql_jwt.middleware.JSONWebTokenMiddleware',
+        'users.debug_middleware.DebugUserMiddleware',
     ],
 }
 

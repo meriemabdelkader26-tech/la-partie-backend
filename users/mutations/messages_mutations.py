@@ -81,6 +81,20 @@ class SendMessage(graphene.Mutation):
             elif user_role == 'INFLUENCER' and receiver_role == 'COMPANY':
                 company_user = receiver
                 influencer_user = user
+            elif user_role == 'ADMIN':
+                if receiver_role == 'COMPANY':
+                    company_user = receiver
+                    influencer_user = user
+                else: # ADMIN messaging INFLUENCER or other ADMIN
+                    company_user = user
+                    influencer_user = receiver
+            elif receiver_role == 'ADMIN':
+                if user_role == 'COMPANY':
+                    company_user = user
+                    influencer_user = receiver
+                else: # INFLUENCER or other ADMIN messaging ADMIN
+                    company_user = receiver
+                    influencer_user = user
             else:
                 raise GraphQLError('Messages are only allowed between company and influencer accounts')
 
@@ -98,7 +112,14 @@ class SendMessage(graphene.Mutation):
         # Notify the recipient with a persistent in-app notification.
         recipient = conversation.influencer if user.id == conversation.company_id else conversation.company
         recipient_role = (normalize_role(recipient.role) or '').upper()
-        messages_path = '/influencer/messages' if recipient_role == 'INFLUENCER' else '/company/messages'
+        
+        if recipient_role == 'INFLUENCER':
+            messages_path = '/influencer/messages'
+        elif recipient_role == 'COMPANY':
+            messages_path = '/company/messages'
+        else:
+            messages_path = '/admin/chat'
+            
         try:
             Notification.objects.create(
                 user=recipient,

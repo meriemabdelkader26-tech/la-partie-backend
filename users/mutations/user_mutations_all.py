@@ -379,7 +379,7 @@ class UpdateUser(graphene.Mutation):
             raise GraphQLError('User not found')
         
         # Only allow users to update their own profile or admins to update any
-        if user.id != current_user.id and not current_user.is_staff:
+        if user.id != current_user.id and not (current_user.is_staff or current_user.is_admin or current_user.is_superuser):
             raise GraphQLError('Permission denied')
         
         # Update fields
@@ -389,7 +389,7 @@ class UpdateUser(graphene.Mutation):
             user.phone_number = kwargs['phone_number']
         
         # Admin-only fields
-        if current_user.is_staff:
+        if current_user.is_staff or current_user.is_admin or current_user.is_superuser:
             if 'email_verified' in kwargs:
                 user.email_verified = kwargs['email_verified']
             if 'phone_number_verified' in kwargs:
@@ -438,7 +438,7 @@ class VerifyEmail(graphene.Mutation):
             raise GraphQLError('User not found')
         
         # Only allow users to verify their own email or admins
-        if user.id != current_user.id and not current_user.is_staff:
+        if user.id != current_user.id and not (current_user.is_staff or current_user.is_admin or current_user.is_superuser):
             raise GraphQLError('Permission denied')
         
         user.verify_email()
@@ -471,7 +471,7 @@ class VerifyPhone(graphene.Mutation):
             raise GraphQLError('User not found')
         
         # Only allow users to verify their own phone or admins
-        if user.id != current_user.id and not current_user.is_staff:
+        if user.id != current_user.id and not (current_user.is_staff or current_user.is_admin or current_user.is_superuser):
             raise GraphQLError('Permission denied')
         
         user.verify_phone()
@@ -495,7 +495,7 @@ class AdminVerifyUser(graphene.Mutation):
     def mutate(self, info, user_id):
         current_user = info.context.user
         
-        if not current_user.is_authenticated or not current_user.is_staff:
+        if not current_user.is_authenticated or not (current_user.is_staff or current_user.is_admin or current_user.is_superuser):
             raise GraphQLError('Admin permission required')
         
         # Decode global ID
@@ -532,7 +532,7 @@ class BanUser(graphene.Mutation):
     def mutate(self, info, user_id):
         current_user = info.context.user
         
-        if not current_user.is_authenticated or not current_user.is_staff:
+        if not current_user.is_authenticated or not (current_user.is_staff or current_user.is_admin or current_user.is_superuser):
             raise GraphQLError('Admin permission required')
         
         # Decode global ID
@@ -569,7 +569,7 @@ class UnbanUser(graphene.Mutation):
     def mutate(self, info, user_id):
         current_user = info.context.user
         
-        if not current_user.is_authenticated or not current_user.is_staff:
+        if not current_user.is_authenticated or not (current_user.is_staff or current_user.is_admin or current_user.is_superuser):
             raise GraphQLError('Admin permission required')
         
         # Decode global ID
@@ -622,7 +622,7 @@ class DeleteUser(graphene.Mutation):
             raise GraphQLError('User not found')
         
         # Only allow users to delete their own account or admins to delete any
-        if user.id != current_user.id and not current_user.is_staff:
+        if user.id != current_user.id and not (current_user.is_staff or current_user.is_admin or current_user.is_superuser):
             raise GraphQLError('Permission denied')
         
         user.delete()

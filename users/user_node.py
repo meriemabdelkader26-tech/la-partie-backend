@@ -61,16 +61,21 @@ class UserNode(DjangoObjectType):
     
     def resolve_role(self, info):
         """Convert Django role to GraphQL enum"""
-        if self.role:
+        role = getattr(self, 'role', None)
+        if role:
             # Handle incorrectly stored roles like 'EnumMeta.COMPANY'
-            if 'EnumMeta.' in str(self.role):
-                role_value = str(self.role).split('.')[-1]  # Extract 'COMPANY' from 'EnumMeta.COMPANY'
+            role_str = str(role)
+            if 'EnumMeta.' in role_str:
+                role_value = role_str.split('.')[-1]  # Extract 'COMPANY' from 'EnumMeta.COMPANY'
                 return role_value
-            return self.role
+            return role
         return None
     
     def resolve_influencer_profile(self, info):
         """Get influencer profile if user is an influencer"""
+        if not getattr(self, 'is_authenticated', False):
+            return None
+            
         from .utils import check_user_role
         if check_user_role(self, 'INFLUENCER'):
             try:
@@ -80,45 +85,61 @@ class UserNode(DjangoObjectType):
         return None
 
     def _quota_snapshot(self):
+        if not getattr(self, 'is_authenticated', False):
+            return None
+            
         if not hasattr(self, '_cached_quota_snapshot'):
             self._cached_quota_snapshot = get_user_quota_snapshot(self)
         return self._cached_quota_snapshot
 
     def resolve_billing_plan(self, info):
-        return self._quota_snapshot().plan
+        snapshot = self._quota_snapshot()
+        return snapshot.plan if snapshot else None
 
     def resolve_billing_subscription_status(self, info):
-        return self._quota_snapshot().subscription_status
+        snapshot = self._quota_snapshot()
+        return snapshot.subscription_status if snapshot else None
 
     def resolve_billing_period_start(self, info):
-        return self._quota_snapshot().period_start
+        snapshot = self._quota_snapshot()
+        return snapshot.period_start if snapshot else None
 
     def resolve_billing_period_end(self, info):
-        return self._quota_snapshot().period_end
+        snapshot = self._quota_snapshot()
+        return snapshot.period_end if snapshot else None
 
     def resolve_campaigns_used(self, info):
-        return self._quota_snapshot().campaigns_used
+        snapshot = self._quota_snapshot()
+        return snapshot.campaigns_used if snapshot else 0
 
     def resolve_campaigns_limit(self, info):
-        return self._quota_snapshot().campaigns_limit
+        snapshot = self._quota_snapshot()
+        return snapshot.campaigns_limit if snapshot else None
 
     def resolve_campaigns_remaining(self, info):
-        return self._quota_snapshot().campaigns_remaining
+        snapshot = self._quota_snapshot()
+        return snapshot.campaigns_remaining if snapshot else None
 
     def resolve_applications_used(self, info):
-        return self._quota_snapshot().applications_used
+        snapshot = self._quota_snapshot()
+        return snapshot.applications_used if snapshot else 0
 
     def resolve_applications_limit(self, info):
-        return self._quota_snapshot().applications_limit
+        snapshot = self._quota_snapshot()
+        return snapshot.applications_limit if snapshot else None
 
     def resolve_applications_remaining(self, info):
-        return self._quota_snapshot().applications_remaining
+        snapshot = self._quota_snapshot()
+        return snapshot.applications_remaining if snapshot else None
 
     def resolve_can_create_campaign(self, info):
-        return self._quota_snapshot().can_create_campaign
+        snapshot = self._quota_snapshot()
+        return snapshot.can_create_campaign if snapshot else False
 
     def resolve_can_apply_to_campaign(self, info):
-        return self._quota_snapshot().can_apply_to_campaign
+        snapshot = self._quota_snapshot()
+        return snapshot.can_apply_to_campaign if snapshot else False
 
     def resolve_has_active_paid_plan(self, info):
-        return self._quota_snapshot().has_active_paid_plan
+        snapshot = self._quota_snapshot()
+        return snapshot.has_active_paid_plan if snapshot else False

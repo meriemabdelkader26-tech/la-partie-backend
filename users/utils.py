@@ -37,7 +37,8 @@ def normalize_role(role):
     """
     if not role:
         return role
-    return role.split('.')[-1] if '.' in role else role
+    role_str = str(role)
+    return role_str.split('.')[-1] if '.' in role_str else role_str
 
 
 def check_user_role(user, expected_role):

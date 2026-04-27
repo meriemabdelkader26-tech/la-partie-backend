@@ -32,7 +32,7 @@ class UserListQuery(graphene.ObjectType):
         - role, -role
         """
         user = info.context.user
-        if not user.is_authenticated or not user.is_staff:
+        if not user.is_authenticated or not (user.is_staff or user.is_admin or user.is_superuser):
             return User.objects.none()
         
         # Exclude staff users by default

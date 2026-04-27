@@ -16,7 +16,7 @@ class RefineRequirementsMutation(graphene.Mutation):
     @login_required
     def mutate(cls, root, info, requirements):
         user = info.context.user
-        if not user.is_staff:
+        if not (user.is_staff or user.is_admin or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
 
         try:

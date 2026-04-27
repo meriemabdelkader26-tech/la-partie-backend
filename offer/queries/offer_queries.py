@@ -116,7 +116,7 @@ class OfferQueries(OfferSingleQuery, OfferListQuery):
     def resolve_company_dashboard_stats(self, info, **kwargs):
         user = info.context.user
 
-        if not check_user_role(user, "COMPANY") and not user.is_staff and not user.is_superuser:
+        if not (check_user_role(user, "COMPANY") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("This query is only available for company accounts")
 
         offers_qs = Offer.objects.filter(created_by=user)
@@ -179,7 +179,7 @@ class OfferQueries(OfferSingleQuery, OfferListQuery):
     def resolve_influencer_dashboard_stats(self, info, **kwargs):
         user = info.context.user
 
-        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_superuser):
+        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("This query is only available for influencer accounts")
 
         from users.influencer_models import Influencer
@@ -317,7 +317,7 @@ class OfferQueries(OfferSingleQuery, OfferListQuery):
     def resolve_my_payment_methods(self, info, **kwargs):
         user = info.context.user
 
-        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_superuser):
+        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("This query is only available for influencer accounts")
 
         methods = InfluencerPaymentMethod.objects.filter(user=user, is_active=True).order_by("-is_primary", "-created_at")
@@ -339,7 +339,7 @@ class OfferQueries(OfferSingleQuery, OfferListQuery):
     def resolve_my_payout_requests(self, info, **kwargs):
         user = info.context.user
 
-        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_superuser):
+        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("This query is only available for influencer accounts")
 
         payout_requests = PayoutRequest.objects.select_related("payment_method").filter(user=user).order_by("-requested_at")

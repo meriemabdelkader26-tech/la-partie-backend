@@ -122,15 +122,27 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def is_admin(self):
-        return self.role == UserRole.ADMIN.value
+        if not self.role:
+            return False
+        role_str = str(self.role)
+        normalized_role = role_str.split('.')[-1] if '.' in role_str else role_str
+        return normalized_role == UserRole.ADMIN.value
 
     @property
     def is_company(self):
-        return self.role == UserRole.COMPANY.value
+        if not self.role:
+            return False
+        role_str = str(self.role)
+        normalized_role = role_str.split('.')[-1] if '.' in role_str else role_str
+        return normalized_role == UserRole.COMPANY.value
 
     @property
     def is_influencer(self):
-        return self.role == UserRole.INFLUENCER.value
+        if not self.role:
+            return False
+        role_str = str(self.role)
+        normalized_role = role_str.split('.')[-1] if '.' in role_str else role_str
+        return normalized_role == UserRole.INFLUENCER.value
 
 
 class UserSubscription(models.Model):

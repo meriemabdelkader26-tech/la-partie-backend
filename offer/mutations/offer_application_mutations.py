@@ -165,7 +165,7 @@ class CreateOfferApplication(graphene.Mutation):
         if not user.is_authenticated:
             raise GraphQLError("You must be logged in.")
 
-        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_superuser):
+        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("Only influencer accounts can apply to campaigns.")
 
         try:
@@ -256,7 +256,7 @@ class DeclineOfferOpportunity(graphene.Mutation):
         if not user.is_authenticated:
             raise GraphQLError("You must be logged in.")
 
-        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_superuser):
+        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("Only influencer accounts can decline opportunities.")
 
         try:
@@ -422,7 +422,7 @@ class MarkApplicationPaymentEscrow(graphene.Mutation):
         except OfferApplication.DoesNotExist:
             raise GraphQLError("Application not found.")
 
-        if application.offer.created_by != user and not user.is_staff and not user.is_superuser:
+        if application.offer.created_by != user and not (user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("You are not allowed to mark escrow for this application.")
 
         if application.status != ApplicationStatus.APPROVED:
@@ -468,7 +468,7 @@ class CreateApplicationCheckoutSession(graphene.Mutation):
         except OfferApplication.DoesNotExist:
             raise GraphQLError("Application not found.")
 
-        if application.offer.created_by != user and not user.is_staff and not user.is_superuser:
+        if application.offer.created_by != user and not (user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("You are not allowed to pay this application.")
 
         if application.status != ApplicationStatus.APPROVED:
@@ -545,7 +545,7 @@ class ReleaseApplicationPayment(graphene.Mutation):
         except OfferApplication.DoesNotExist:
             raise GraphQLError("Application not found.")
 
-        if application.offer.created_by != user and not user.is_staff and not user.is_superuser:
+        if application.offer.created_by != user and not (user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("You are not allowed to release payment for this application.")
 
         if application.payment_status != PaymentStatus.IN_ESCROW:
@@ -587,7 +587,7 @@ class RefundApplicationPayment(graphene.Mutation):
         except OfferApplication.DoesNotExist:
             raise GraphQLError("Application not found.")
 
-        if application.offer.created_by != user and not user.is_staff and not user.is_superuser:
+        if application.offer.created_by != user and not (user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("You are not allowed to refund this application.")
 
         if application.payment_status != PaymentStatus.IN_ESCROW:
@@ -617,7 +617,7 @@ class AddPaymentMethod(graphene.Mutation):
         if not user.is_authenticated:
             raise GraphQLError("You must be logged in.")
 
-        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_superuser):
+        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("Only influencer accounts can add payment methods.")
 
         allowed_types = {choice[0] for choice in PaymentMethodType.choices}
@@ -665,7 +665,7 @@ class CreatePayoutRequest(graphene.Mutation):
         if not user.is_authenticated:
             raise GraphQLError("You must be logged in.")
 
-        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_superuser):
+        if not (check_user_role(user, "INFLUENCER") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("Only influencer accounts can request payouts.")
 
         try:

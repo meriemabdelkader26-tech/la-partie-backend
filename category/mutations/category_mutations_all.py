@@ -27,8 +27,15 @@ class CategoryCreateMutation(DjangoCreateMutation):
     def check_permissions(cls, root, info, input):
         """Only allow admin users to create categories"""
         user = info.context.user
-        if not user.is_staff:
+        user_email = getattr(user, 'email', 'Anonymous')
+        print(f"[DEBUG] CategoryCreateMutation check_permissions for user: {user_email}")
+        print(f"[DEBUG] user.is_staff: {getattr(user, 'is_staff', False)}, user.is_admin: {getattr(user, 'is_admin', False)}, user.role: {getattr(user, 'role', 'N/A')}")
+        
+        if not (getattr(user, 'is_staff', False) or getattr(user, 'is_admin', False) or getattr(user, 'is_superuser', False)):
+            print(f"[DEBUG] Permission DENIED for user: {user_email}")
             raise GraphQLError("Admin privileges required")
+        
+        print(f"[DEBUG] Permission GRANTED for user: {user_email}")
         return True
 
 
@@ -44,8 +51,15 @@ class CategoryUpdateMutation(DjangoUpdateMutation):
     def check_permissions(cls, root, info, input, id, obj):
         """Only allow admin users to update categories"""
         user = info.context.user
-        if not user.is_staff:
+        user_email = getattr(user, 'email', 'Anonymous')
+        print(f"[DEBUG] CategoryUpdateMutation check_permissions for user: {user_email}")
+        print(f"[DEBUG] user.is_staff: {getattr(user, 'is_staff', False)}, user.is_admin: {getattr(user, 'is_admin', False)}, user.role: {getattr(user, 'role', 'N/A')}")
+        
+        if not (getattr(user, 'is_staff', False) or getattr(user, 'is_admin', False) or getattr(user, 'is_superuser', False)):
+            print(f"[DEBUG] Permission DENIED for user: {user_email}")
             raise GraphQLError("Admin privileges required")
+        
+        print(f"[DEBUG] Permission GRANTED for user: {user_email}")
         return True
 
 
@@ -61,7 +75,7 @@ class CategoryPatchMutation(DjangoPatchMutation):
     def check_permissions(cls, root, info, input, id, obj):
         """Only allow admin users to patch categories"""
         user = info.context.user
-        if not user.is_staff:
+        if not (getattr(user, 'is_staff', False) or getattr(user, 'is_admin', False) or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True
 
@@ -77,7 +91,7 @@ class CategoryDeleteMutation(DjangoDeleteMutation):
     def check_permissions(cls, root, info, input, id):
         """Only allow admin users to delete categories"""
         user = info.context.user
-        if not user.is_staff:
+        if not (getattr(user, 'is_staff', False) or getattr(user, 'is_admin', False) or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True
 
@@ -94,7 +108,7 @@ class CategoryBatchCreateMutation(DjangoBatchCreateMutation):
     def check_permissions(cls, root, info, input):
         """Only allow admin users to batch create categories"""
         user = info.context.user
-        if not user.is_staff:
+        if not (getattr(user, 'is_staff', False) or getattr(user, 'is_admin', False) or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True
 
@@ -110,6 +124,6 @@ class CategoryBatchDeleteMutation(DjangoBatchDeleteMutation):
     def check_permissions(cls, root, info, input):
         """Only allow admin users to batch delete categories"""
         user = info.context.user
-        if not user.is_staff:
+        if not (getattr(user, 'is_staff', False) or getattr(user, 'is_admin', False) or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True

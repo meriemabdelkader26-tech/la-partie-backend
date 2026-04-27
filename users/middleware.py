@@ -17,5 +17,10 @@ class NormalizeAuthorizationHeaderMiddleware:
             auth_header = request.META.get("HTTP_AUTHORIZATION", "")
             if isinstance(auth_header, str) and auth_header.startswith("Bearer "):
                 request.META["HTTP_AUTHORIZATION"] = "JWT " + auth_header[len("Bearer "):]
+                print(f"[DEBUG] Normalized Bearer to JWT. New header: {request.META['HTTP_AUTHORIZATION'][:20]}...")
+            elif isinstance(auth_header, str) and auth_header.startswith("JWT "):
+                print(f"[DEBUG] Found JWT header: {auth_header[:20]}...")
+            else:
+                print(f"[DEBUG] No recognized auth header: {auth_header[:20]}...")
 
         return next(root, info, **kwargs)

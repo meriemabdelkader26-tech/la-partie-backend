@@ -21,7 +21,7 @@ class UserQueries(graphene.ObjectType):
     def resolve_all_users(self, info, **kwargs):
         """Get all users with pagination (admin only)"""
         user = info.context.user
-        if not user.is_authenticated or not user.is_staff:
+        if not user.is_authenticated or not (user.is_staff or user.is_admin or user.is_superuser):
             return User.objects.none()
         
         # Exclude staff users by default unless explicitly requested

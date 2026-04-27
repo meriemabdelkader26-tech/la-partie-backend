@@ -95,7 +95,7 @@ class CreateOffer(graphene.Mutation):
         if not user.is_authenticated:
             raise GraphQLError("You must be logged in.")
 
-        if not (check_user_role(user, "COMPANY") or user.is_staff or user.is_superuser):
+        if not (check_user_role(user, "COMPANY") or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("Only company accounts can create offers.")
 
         validation_errors = []
@@ -239,7 +239,7 @@ class UpdateOffer(graphene.Mutation):
             )
 
         # Check permissions: owner or admin
-        if not (offer.created_by == user or user.is_staff or user.is_superuser):
+        if not (offer.created_by == user or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("You do not have permission to update this offer.")
 
         validation_errors = []
@@ -331,7 +331,7 @@ class DeleteOffer(graphene.Mutation):
             )
 
         # Check permissions: owner or admin
-        if not (offer.created_by == user or user.is_staff or user.is_superuser):
+        if not (offer.created_by == user or user.is_staff or user.is_admin or user.is_superuser):
             raise GraphQLError("You do not have permission to delete this offer.")
 
         offer.delete()

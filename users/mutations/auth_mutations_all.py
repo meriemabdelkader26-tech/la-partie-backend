@@ -71,7 +71,10 @@ class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
     
     @classmethod
     def resolve(cls, root, info, **kwargs):
-        return cls(user=info.context.user)
+        user = info.context.user
+        if user and user.is_authenticated:
+            return cls(user=user)
+        return cls(user=None)
 
 
 class VerifyToken(graphql_jwt.Verify):
@@ -229,3 +232,18 @@ class ResetPasswordRequest(graphene.Mutation):
                 success=True,
                 message='If the email exists, password reset instructions have been sent'
             )
+
+
+class LogoutMutation(graphene.Mutation):
+    """Logout mutation to clear backend state if any"""
+    success = graphene.Boolean()
+    message = graphene.String()
+
+    def mutate(self, info):
+        user = info.context.user
+        if user and user.is_authenticated:
+            print(f"[AUTH] User logged out: {user.email}")
+        
+        # In a real JWT setup with blacklisting, we'd blacklist the token here
+        # For now, we just confirm logout success
+        return LogoutMutation(success=True, message="Logged out successfully")

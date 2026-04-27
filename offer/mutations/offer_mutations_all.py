@@ -29,7 +29,7 @@ class OfferCreateMutation(DjangoCreateMutation):
     @login_required
     def mutate(cls, root, info, input):
         user = info.context.user
-        if not user.is_staff:
+        if not (user.is_staff or user.is_admin or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
 
         # Crée l'objet sans le sauvegarder
@@ -53,7 +53,7 @@ class OfferCreateMutation(DjangoCreateMutation):
     @login_required
     def check_permissions(cls, root, info, input):
         user = info.context.user
-        if not user.is_staff:
+        if not (user.is_staff or user.is_admin or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True
 
@@ -73,7 +73,7 @@ class OfferUpdateMutation(DjangoPatchMutation):
     def check_permissions(cls, root, info, input, id, obj):
         """Only allow admin users to update offers"""
         user = info.context.user
-        if not user.is_staff:
+        if not (user.is_staff or user.is_admin or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True
 
@@ -92,7 +92,7 @@ class OfferPatchMutation(DjangoPatchMutation):
     def check_permissions(cls, root, info, input, id, obj):
         """Only allow admin users to patch offers"""
         user = info.context.user
-        if not user.is_staff:
+        if not (user.is_staff or user.is_admin or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True
 
@@ -109,7 +109,7 @@ class OfferDeleteMutation(DjangoDeleteMutation):
     def check_permissions(cls, root, info, input, id):
         """Only allow admin users to delete offers"""
         user = info.context.user
-        if not user.is_staff:
+        if not (user.is_staff or user.is_admin or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True
 
@@ -127,7 +127,7 @@ class OfferBatchCreateMutation(DjangoBatchCreateMutation):
     def check_permissions(cls, root, info, input):
         """Only allow admin users to batch create offers"""
         user = info.context.user
-        if not user.is_staff:
+        if not (user.is_staff or user.is_admin or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True
 
@@ -144,6 +144,6 @@ class OfferBatchDeleteMutation(DjangoBatchDeleteMutation):
     def check_permissions(cls, root, info, input):
         """Only allow admin users to batch delete offers"""
         user = info.context.user
-        if not user.is_staff:
+        if not (user.is_staff or user.is_admin or getattr(user, 'is_superuser', False)):
             raise GraphQLError("Admin privileges required")
         return True

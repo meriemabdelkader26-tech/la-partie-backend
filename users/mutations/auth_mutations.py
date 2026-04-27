@@ -7,7 +7,8 @@ from .auth_mutations_all import (
     ChangePassword,
     ForgotPassword,
     ResetPassword,
-    ResetPasswordRequest
+    ResetPasswordRequest,
+    LogoutMutation
 )
 
 
@@ -19,6 +20,7 @@ class AuthMutations(graphene.ObjectType):
     verify_token = VerifyToken.Field()
     refresh_token = RefreshToken.Field()
     revoke_token = RevokeToken.Field()
+    logout = LogoutMutation.Field()
     
     # Password management
     change_password = ChangePassword.Field()
