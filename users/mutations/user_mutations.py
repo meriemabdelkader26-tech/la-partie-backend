@@ -16,7 +16,8 @@ from .user_mutations_all import (
     AdminVerifyUser,
     BanUser,
     UnbanUser,
-    DeleteUser
+    DeleteUser,
+    BulkDeleteUsers
 )
 
 
@@ -34,6 +35,7 @@ class UserMutations(graphene.ObjectType):
     ban_user = BanUser.Field()
     unban_user = UnbanUser.Field()
     delete_user = DeleteUser.Field()
+    bulk_delete_users = BulkDeleteUsers.Field()
     create_platform_subscription_checkout_session = CreatePlatformSubscriptionCheckoutSession.Field()
     create_billing_portal_session = CreateBillingPortalSession.Field()
     refine_company_description = RefineCompanyDescriptionMutation.Field()

@@ -215,6 +215,7 @@ class InfluencerNode(DjangoObjectType):
     portfolio_media = graphene.List(PortfolioMediaNode)
     offres_collaboration = graphene.List(OffreCollaborationNode)
     statistiques_globales = graphene.Field(StatistiquesGlobalesType)
+    statistiques_historique = graphene.List(StatistiquesGlobalesNode)
     profile_picture = graphene.String()
     
     class Meta:
@@ -223,7 +224,7 @@ class InfluencerNode(DjangoObjectType):
             'id', 'user', 'instagram_username', 'pseudo', 'biography',
             'site_web', 'localisation', 'instagram_data', 'selected_categories',
             'langues', 'centres_interet', 'type_contenu',
-            'disponibilite_collaboration', 'created_at', 'updated_at', 'profile_picture'
+            'disponibilite_collaboration', 'created_at', 'updated_at'
         )
         interfaces = (graphene.relay.Node,)
         connection_class = InfluencerConnection
@@ -257,22 +258,31 @@ class InfluencerNode(DjangoObjectType):
     def resolve_offres_collaboration(self, info):
         return self.offres_collaboration.all()
     
+    def resolve_statistiques_historique(self, info):
+        return self.statistiques_historique.all()
+    
     def resolve_statistiques_globales(self, info):
         """Return current global statistics"""
-        return {
-            'followers_totaux': self.followers_totaux,
-            'engagement_moyen_global': self.engagement_moyen_global,
-            'croissance_mensuelle': self.calculate_croissance_mensuelle()
-        }
+        return StatistiquesGlobalesType(
+            followers_totaux=self.followers_totaux,
+            engagement_moyen_global=self.engagement_moyen_global,
+            croissance_mensuelle=self.calculate_croissance_mensuelle()
+        )
 
     def resolve_profile_picture(self, info):
-        """Resolve profile picture from images relation"""
+        """Resolve profile picture from images relation or instagram_data fallback"""
+        url = None
         try:
             profile_pic = self.images.filter(is_default=True).first()
             if not profile_pic:
                 profile_pic = self.images.first()
             if profile_pic:
-                return profile_pic.url
+                url = profile_pic.url
         except Exception:
             pass
-        return None
+            
+        # Fallback to instagram_data
+        if not url and self.instagram_data and isinstance(self.instagram_data, dict):
+            url = self.instagram_data.get('profile_pic_url')
+            
+        return url

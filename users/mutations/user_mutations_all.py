@@ -631,3 +631,40 @@ class DeleteUser(graphene.Mutation):
             success=True,
             message='User deleted successfully'
         )
+
+
+class BulkDeleteUsers(graphene.Mutation):
+    """Delete multiple users at once"""
+    success = graphene.Boolean()
+    message = graphene.String()
+    deleted_count = graphene.Int()
+    
+    class Arguments:
+        user_ids = graphene.List(graphene.ID, required=True)
+    
+    def mutate(self, info, user_ids):
+        current_user = info.context.user
+        
+        if not current_user.is_authenticated or not (current_user.is_staff or current_user.is_admin or current_user.is_superuser):
+            raise GraphQLError('Admin permission required for bulk delete')
+            
+        real_ids = []
+        for user_id in user_ids:
+            try:
+                node_type, pk = from_global_id(user_id)
+                if node_type == 'UserNode':
+                    real_ids.append(pk)
+                else:
+                    real_ids.append(user_id) # Assume it's a raw ID
+            except Exception:
+                real_ids.append(user_id)
+                
+        users_to_delete = User.objects.filter(pk__in=real_ids)
+        count = users_to_delete.count()
+        users_to_delete.delete()
+        
+        return BulkDeleteUsers(
+            success=True,
+            message=f'Successfully deleted {count} users',
+            deleted_count=count
+        )
