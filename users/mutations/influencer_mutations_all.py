@@ -409,3 +409,118 @@ class CompleteInfluencerProfile(graphene.Mutation):
             success=True,
             message='Influencer profile completed successfully. Pending admin verification.'
         )
+
+
+class UpdateInfluencerAvailability(graphene.Mutation):
+    """Quickly update influencer availability status"""
+    
+    success = graphene.Boolean()
+    message = graphene.String()
+    influencer = graphene.Field(InfluencerNode)
+    
+    class Arguments:
+        disponibilite_collaboration = graphene.Argument(DisponibiliteEnum, required=True)
+        
+    def mutate(self, info, disponibilite_collaboration):
+        user = info.context.user
+        
+        if not user.is_authenticated:
+            raise GraphQLError('Authentication required')
+            
+        if not check_user_role(user, 'INFLUENCER'):
+            raise GraphQLError('This action is only available for influencer accounts')
+            
+        try:
+            influencer = Influencer.objects.get(user=user)
+        except Influencer.DoesNotExist:
+            raise GraphQLError('Influencer profile not found')
+            
+        influencer.disponibilite_collaboration = disponibilite_collaboration
+        influencer.save(update_fields=['disponibilite_collaboration'])
+        
+        return UpdateInfluencerAvailability(
+            success=True,
+            message=f'Availability updated to {disponibilite_collaboration}',
+            influencer=influencer
+        )
+
+
+class UpdateInfluencerProfilePartial(graphene.Mutation):
+    """Partially update influencer profile (type_contenu, reseaux_sociaux, langues, selected_categories, etc.)"""
+    
+    success = graphene.Boolean()
+    message = graphene.String()
+    influencer = graphene.Field(InfluencerNode)
+    
+    class Arguments:
+        type_contenu = graphene.List(graphene.String)
+        reseaux_sociaux = graphene.List(ReseauSocialInput)
+        langues = graphene.List(graphene.String)
+        selected_categories = graphene.List(graphene.ID)
+        
+    @transaction.atomic
+    def mutate(self, info, **kwargs):
+        user = info.context.user
+        
+        if not user.is_authenticated:
+            raise GraphQLError('Authentication required')
+            
+        if not check_user_role(user, 'INFLUENCER'):
+            raise GraphQLError('This action is only available for influencer accounts')
+            
+        try:
+            influencer = Influencer.objects.get(user=user)
+        except Influencer.DoesNotExist:
+            raise GraphQLError('Influencer profile not found')
+            
+        if 'type_contenu' in kwargs:
+            influencer.type_contenu = kwargs['type_contenu']
+            
+        if 'langues' in kwargs:
+            influencer.langues = kwargs['langues']
+            
+        if 'selected_categories' in kwargs:
+            category_ids = kwargs['selected_categories']
+            decoded_category_ids = []
+            for global_id in category_ids:
+                try:
+                    node_type, category_id = from_global_id(global_id)
+                    decoded_category_ids.append(int(category_id))
+                except Exception:
+                    try:
+                        decoded_category_ids.append(int(global_id))
+                    except ValueError:
+                        raise GraphQLError(f'Invalid category ID: {global_id}')
+            
+            categories = Category.objects.filter(id__in=decoded_category_ids)
+            influencer.selected_categories.set(categories)
+            
+        if 'reseaux_sociaux' in kwargs:
+            # Simple approach: clear and recreate (same as CompleteInfluencerProfile)
+            influencer.reseaux_sociaux.all().delete()
+            for rs_data in kwargs['reseaux_sociaux']:
+                nombre_abonnes = int(rs_data['nombre_abonnes']) if rs_data.get('nombre_abonnes') else 0
+                taux_engagement = float(rs_data['taux_engagement']) if rs_data.get('taux_engagement') else 0.0
+                moyenne_vues = int(rs_data.get('moyenne_vues') or 0)
+                moyenne_likes = int(rs_data.get('moyenne_likes') or 0)
+                moyenne_commentaires = int(rs_data.get('moyenne_commentaires') or 0)
+                
+                ReseauSocial.objects.create(
+                    influencer=influencer,
+                    plateforme=rs_data['plateforme'],
+                    url_profil=rs_data['url_profil'],
+                    nombre_abonnes=nombre_abonnes,
+                    taux_engagement=taux_engagement,
+                    moyenne_vues=moyenne_vues,
+                    moyenne_likes=moyenne_likes,
+                    moyenne_commentaires=moyenne_commentaires,
+                    frequence_publication=rs_data.get('frequence_publication', 'hebdomadaire')
+                )
+        
+        influencer.save()
+        
+        return UpdateInfluencerProfilePartial(
+            success=True,
+            message='Profile updated successfully',
+            influencer=influencer
+        )

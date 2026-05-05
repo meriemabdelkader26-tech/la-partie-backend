@@ -5,6 +5,7 @@ from .company_mutations_all import (
     AddCompanyImage,
     RemoveCompanyImage,
     CompleteCompanyProfile,
+    UpdateCompanyAvailability,
     AddressInput,
     CompanyImageInput
 )
@@ -15,6 +16,7 @@ class CompanyMutations(graphene.ObjectType):
     
     create_company_profile = CreateCompanyProfile.Field()
     update_company_profile = UpdateCompanyProfile.Field()
+    update_company_availability = UpdateCompanyAvailability.Field()
     add_company_image = AddCompanyImage.Field()
     remove_company_image = RemoveCompanyImage.Field()
     complete_company_profile = CompleteCompanyProfile.Field()

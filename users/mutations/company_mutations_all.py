@@ -357,3 +357,37 @@ class CompleteCompanyProfile(graphene.Mutation):
             message="Company profile completed successfully",
             company=company
         )
+
+
+class UpdateCompanyAvailability(graphene.Mutation):
+    """Quickly update company availability status"""
+    
+    success = graphene.Boolean()
+    message = graphene.String()
+    company = graphene.Field(CompanyNode)
+    
+    class Arguments:
+        disponibilite_collaboration = graphene.String(required=True)
+        
+    def mutate(self, info, disponibilite_collaboration):
+        user = info.context.user
+        
+        if not user.is_authenticated:
+            raise GraphQLError('Authentication required')
+            
+        if not is_company_role(user):
+            raise GraphQLError('This action is only available for company accounts')
+            
+        try:
+            company = user.company_profile
+        except AttributeError:
+            raise GraphQLError('Company profile not found')
+            
+        company.disponibilite_collaboration = disponibilite_collaboration
+        company.save(update_fields=['disponibilite_collaboration'])
+        
+        return UpdateCompanyAvailability(
+            success=True,
+            message=f'Availability updated to {disponibilite_collaboration}',
+            company=company
+        )

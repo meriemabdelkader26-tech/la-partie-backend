@@ -40,6 +40,7 @@ class CompanyNode(DjangoObjectType):
     
     images = graphene.List(CompanyImageNode)
     address = graphene.Field(AddressNode)
+    disponibilite_collaboration = graphene.Field('users.influencer_node.DisponibiliteEnum')
     
     class Meta:
         model = Company
@@ -69,3 +70,8 @@ class CompanyNode(DjangoObjectType):
     def resolve_address(self, info):
         """Resolve address for the company"""
         return self.address
+
+    def resolve_disponibilite_collaboration(self, info):
+        """Normalize availability value"""
+        from ..influencer_node import normalize_enum_value
+        return normalize_enum_value(self.disponibilite_collaboration)

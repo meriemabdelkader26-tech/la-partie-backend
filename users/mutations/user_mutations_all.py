@@ -347,6 +347,7 @@ class UpdateUser(graphene.Mutation):
     
     class Arguments:
         user_id = graphene.ID(required=True)
+        email = graphene.String()
         name = graphene.String()
         phone_number = graphene.String()
         email_verified = graphene.Boolean()
@@ -383,6 +384,14 @@ class UpdateUser(graphene.Mutation):
             raise GraphQLError('Permission denied')
         
         # Update fields
+        if 'email' in kwargs:
+            new_email = kwargs['email'].strip().lower()
+            if User.objects.filter(email=new_email).exclude(pk=user.id).exists():
+                raise GraphQLError('A user with this email already exists')
+            user.email = new_email
+            # Reset verification if email changed
+            if getattr(settings, 'EMAIL_VERIFICATION_REQUIRED', False):
+                user.email_verified = False
         if 'name' in kwargs:
             user.name = kwargs['name']
         if 'phone_number' in kwargs:

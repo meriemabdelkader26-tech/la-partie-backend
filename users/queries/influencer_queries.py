@@ -91,7 +91,7 @@ class InfluencerQueries(graphene.ObjectType):
         
         
         if not check_user_role(user, 'INFLUENCER'):
-            raise GraphQLError(f'This query is only available for influencer accounts (current role: {user.role}, type: {type(user.role)})')
+            return None
         
         try:
             return Influencer.objects.get(user=user)
